@@ -122,6 +122,43 @@ export function FeatureCard({
       setIsEnhancing(false);
     }
   };
+  
+  // Handle generating tags for the feature with AI
+  const handleGenerateTags = async () => {
+    if (isTagging) return;
+    
+    setIsTagging(true);
+    try {
+      const result = await generateTags({
+        featureName: feature.name,
+        featureDescription: feature.description,
+        projectContext: ""  // Could be enhanced with project description
+      });
+      
+      // Update the feature with the generated tags
+      await updateFeature(feature.id, {
+        tags: result.tags
+      });
+      
+      // Invalidate the query to refresh the feature data
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/projects/${feature.projectId}/features`] 
+      });
+      
+      toast({
+        title: "Tags generated",
+        description: `${result.tags.length} tags have been added to this feature.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Tag generation failed",
+        description: "Could not generate tags for this feature.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTagging(false);
+    }
+  };
 
   return (
     <Card
@@ -192,6 +229,25 @@ export function FeatureCard({
           )}
         </div>
         
+        {/* Display feature tags if available */}
+        {feature.tags && Array.isArray(feature.tags) && feature.tags.length > 0 && (
+          <div className="mb-4">
+            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</h5>
+            <div className="flex flex-wrap gap-2">
+              {feature.tags.map((tag, index) => (
+                <Badge 
+                  key={index} 
+                  variant="outline" 
+                  className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                >
+                  <Tag className="mr-1 h-3 w-3" />
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+        
         <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
           <div className="flex flex-col sm:flex-row sm:justify-between">
             <div className="mb-4 sm:mb-0">
@@ -210,6 +266,32 @@ export function FeatureCard({
             </div>
           </div>
         </div>
+        {/* Actions section */}
+        {showActions && (
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+            <div className="flex space-x-3">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={handleEnhance} 
+                disabled={isEnhancing}
+              >
+                <Bot className="mr-2 h-4 w-4" />
+                {isEnhancing ? "Enhancing..." : "Enhance Description"}
+              </Button>
+              
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={handleGenerateTags} 
+                disabled={isTagging}
+              >
+                <Tag className="mr-2 h-4 w-4" />
+                {isTagging ? "Generating..." : "Auto-Tag"}
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

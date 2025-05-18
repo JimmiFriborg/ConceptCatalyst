@@ -34,6 +34,7 @@ export async function updateFeature(id: number, data: {
   perspective?: Perspective;
   category?: Category;
   aiEnhanced?: any;
+  tags?: string[];
 }) {
   const res = await apiRequest("PUT", `/api/features/${id}`, data);
   return res.json();
