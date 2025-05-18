@@ -11,7 +11,8 @@ import {
   analyzeFeature, 
   enhanceFeatureDescription, 
   generateFeatureSuggestions,
-  analyzeForBranching
+  analyzeForBranching,
+  generateTags
 } from "./openai";
 import { z } from "zod";
 
@@ -320,6 +321,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(enhancement);
     } catch (error) {
       res.status(500).json({ message: "Failed to enhance description" });
+    }
+  });
+  
+  app.post("/api/ai/generate-tags", async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        featureName: z.string().min(1),
+        featureDescription: z.string().min(1),
+        projectContext: z.string().optional()
+      });
+      
+      const validateResult = schema.safeParse(req.body);
+      
+      if (!validateResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid data", 
+          errors: validateResult.error.format() 
+        });
+      }
+      
+      const { featureName, featureDescription, projectContext } = validateResult.data;
+      const projectInfo = projectContext || "General software project";
+      const tags = await generateTags(featureName, featureDescription, projectInfo);
+      
+      res.json({ tags });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate tags" });
     }
   });
   

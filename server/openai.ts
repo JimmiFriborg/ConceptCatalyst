@@ -187,6 +187,48 @@ export async function analyzeForBranching(
   }
 }
 
+// Generate tags for a feature based on its name and description
+export async function generateTags(
+  featureName: string,
+  featureDescription: string, 
+  projectContext: string
+): Promise<string[]> {
+  try {
+    const prompt = `
+      You are an expert product tagger helping to categorize features for a software project.
+      Given the information about a feature, generate 3-7 relevant tags.
+      
+      Project Context: ${projectContext}
+      
+      Feature Name: ${featureName}
+      Feature Description: ${featureDescription}
+      
+      Generate 3-7 relevant tags for this feature. Tags should be single words or short phrases (1-3 words) 
+      that capture key concepts, technologies, domains, or user needs.
+      
+      Format your response as a JSON object with this exact structure:
+      {
+        "tags": ["tag1", "tag2", "tag3"],
+        "rationale": "Brief explanation of why these tags were chosen"
+      }
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content;
+    const result = JSON.parse(content || "{}") as TagGenerationResponse;
+    
+    return result.tags || [];
+  } catch (error) {
+    console.error("Error generating tags:", error);
+    return [];
+  }
+}
+
 export async function generateFeatureSuggestions(
   projectName: string,
   projectDescription: string,
