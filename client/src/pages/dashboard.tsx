@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 // Using a simplified wizard with direct form inputs
 import { SimpleProjectWizard } from "@/components/simple-project-wizard";
-import { PlusCircle, FolderOpen, Folder, Clock, ArrowRight } from "lucide-react";
+import { ImportProjectDialog } from "@/components/import-project-dialog";
+import { PlusCircle, FolderOpen, Folder, Clock, ArrowRight, FileUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { deleteProject } from "@/lib/api";
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [_, navigate] = useLocation();
   const { data: projects, isLoading, isError } = useProjects();
   const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
+  const [isImportProjectOpen, setIsImportProjectOpen] = useState(false);
   const { toast } = useToast();
 
   const handleOpenProject = (id: number) => {
@@ -48,10 +50,16 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               <span className="text-primary">Feature</span>Priority AI
             </h1>
-            <Button onClick={() => setIsAddProjectOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Project
-            </Button>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setIsImportProjectOpen(true)}>
+                <FileUp className="mr-2 h-4 w-4" />
+                Import Project
+              </Button>
+              <Button onClick={() => setIsAddProjectOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Project
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -179,6 +187,11 @@ export default function Dashboard() {
       <SimpleProjectWizard
         open={isAddProjectOpen}
         onOpenChange={setIsAddProjectOpen}
+      />
+      
+      <ImportProjectDialog
+        open={isImportProjectOpen}
+        onOpenChange={setIsImportProjectOpen}
       />
     </div>
   );

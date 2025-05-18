@@ -1,0 +1,109 @@
+Format:
+	•	Project Name:
+	•	Project Description:
+	•	Mission Statement:
+	•	Primary Goal:
+	•	Secondary Goals:
+	•	In-Scope Functionality:
+	•	Out-of-Scope Functionality:
+	•	Constraints:
+	•	Relevant Features & Functionalities:
+
+Each section should have its own header and consist of clear, succinct bullet points. “In-Scope Functionality” should list all core features expected in the initial version. “Out-of-Scope Functionality” must explicitly state what will not be included. “Constraints” must cover all major limitations or requirements. For “Relevant Features & Functionalities,” provide a bullet list of important features, each with a short description if necessary. Optional sections like “Risks,” “Open Questions,” or “Next Steps” can be added at the end if relevant to the concept.
+
+Example:
+
+You’re right—I gave the template prompt, but not a filled-out example using your “FamilyPack Planner” idea. Let’s do that, so you see exactly how the finished concept report should look.
+
+⸻
+
+FamilyPack Planner – Concept Report Example
+
+Project Name:
+	•	FamilyPack Planner
+
+⸻
+
+Project Description:
+	•	A web-based app that creates smart, customizable packing lists for families preparing for trips.
+	•	Takes into account destination, weather, trip duration, family member ages, activities, and special needs.
+	•	Aims to reduce forgotten items and last-minute packing stress by automating the list-making process.
+
+⸻
+
+Mission Statement:
+	•	Make family travel easier by ensuring every family member has what they need—without the chaos or oversight—through intuitive, AI-assisted planning tools.
+
+⸻
+
+Primary Goal:
+	•	Provide a seamless way for families to generate, customize, and share trip packing lists tailored to their unique situations.
+
+⸻
+
+Secondary Goals:
+	•	Reduce stress and cognitive load for parents planning family trips.
+	•	Offer tips for efficient packing and organization.
+	•	Allow collaborative list editing among family members.
+	•	Support both digital (mobile/desktop) and printable lists.
+	•	Encourage sustainability (e.g., reminders about reusable items, eco-friendly options).
+
+⸻
+
+In-Scope Functionality:
+	•	User-friendly web interface with family profile setup.
+	•	Customizable trip details (destination, length, age of travelers, special requirements).
+	•	Auto-generated packing lists based on input parameters and trip type.
+	•	Manual item addition, removal, and editing.
+	•	Ability to assign items to specific family members.
+	•	Printable and shareable lists (PDF, email, link sharing).
+	•	Mobile-friendly design.
+	•	Basic packing tips and reminders integrated into the UI.
+
+⸻
+
+Out-of-Scope Functionality:
+	•	Real-time travel booking or itinerary management.
+	•	Built-in weather forecasting (may link out to external services).
+	•	Integration with third-party e-commerce for direct purchasing.
+	•	Offline mobile app (initial version is web-only).
+	•	AI-powered item suggestion beyond the standard library (advanced AI features could come later).
+
+⸻
+
+Constraints:
+	•	Must be accessible via modern browsers (Chrome, Safari, Edge, Firefox).
+	•	No required user accounts for basic list generation (privacy-first approach).
+	•	Data storage limited to browser/local storage or optional cloud sync for registered users.
+	•	GDPR compliant; clear privacy policy required.
+	•	Should support both English and Danish at launch.
+
+⸻
+
+Relevant Features & Functionalities:
+	•	Family profiles: Store names, ages, and packing preferences for each member.
+	•	Trip templates: Pre-set packing templates for common trip types (beach, camping, city break, etc.).
+	•	Smart suggestions: Adjust list items dynamically based on input (e.g., baby needs, weather gear).
+	•	Checklists: Mark items as packed or pending.
+	•	Export options: Print, PDF download, email, or copy to clipboard.
+	•	Collaborative editing: Multiple users can contribute via shared link.
+	•	Packing tips: Context-aware suggestions (e.g., pack sunscreen for sunny destinations).
+	•	Responsive UI: Works on phone, tablet, and desktop.
+
+⸻
+
+Optional Additional Sections:
+
+Risks:
+	•	Feature creep (adding travel booking or advanced AI too early).
+	•	Data privacy concerns with family/children’s info.
+	•	User adoption if competitors offer deeper integrations.
+
+⸻
+
+Next Steps:
+	•	Validate concept with parents/families via surveys/interviews.
+	•	Develop wireframes and minimum viable product (MVP) spec.
+	•	Prioritize must-have features for MVP launch.
+
+⸻
