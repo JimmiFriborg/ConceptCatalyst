@@ -12,7 +12,8 @@ import {
   enhanceFeatureDescription, 
   generateFeatureSuggestions,
   analyzeForBranching,
-  generateTags
+  generateTags,
+  generateFeaturesFromProjectInfo
 } from "./openai";
 import { z } from "zod";
 

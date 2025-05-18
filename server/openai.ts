@@ -229,6 +229,60 @@ export async function generateTags(
   }
 }
 
+export async function generateFeaturesFromProjectInfo(
+  projectName: string,
+  projectMission?: string,
+  goals?: string[],
+  inScope?: string[],
+  outOfScope?: string[]
+): Promise<FeatureSuggestionResponse[]> {
+  try {
+    const prompt = `
+      As an expert product manager, generate 5-8 feature suggestions for a software project based on the following information:
+      
+      Project Name: ${projectName}
+      ${projectMission ? `Project Mission: ${projectMission}` : ''}
+      ${goals && goals.length > 0 ? `Goals: ${goals.join(', ')}` : ''}
+      ${inScope && inScope.length > 0 ? `In Scope: ${inScope.join(', ')}` : ''}
+      ${outOfScope && outOfScope.length > 0 ? `Out of Scope: ${outOfScope.join(', ')}` : ''}
+      
+      For each feature, provide:
+      1. A clear and concise name
+      2. A detailed description explaining its purpose and value
+      3. A technical perspective (technical, business, ux, or security)
+      4. A suggested category (mvp, launch, v1.5, v2.0)
+      
+      Generate a diverse set of features that cover different aspects of the project.
+      Include both essential features and innovative ideas.
+      
+      Respond with a JSON object with this structure:
+      {
+        "suggestions": [
+          {
+            "name": "Feature Name",
+            "description": "Detailed description",
+            "perspective": "technical|business|ux|security",
+            "suggestedCategory": "mvp|launch|v1.5|v2.0"
+          }
+        ]
+      }
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" }
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    
+    return result.suggestions || [];
+  } catch (error) {
+    console.error("Error generating features from project info:", error);
+    return [];
+  }
+}
+
 export async function generateFeatureSuggestions(
   projectName: string,
   projectDescription: string,
