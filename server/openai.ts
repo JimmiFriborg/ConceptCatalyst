@@ -32,6 +32,11 @@ interface FeatureSuggestionResponse {
   suggestedCategory: Category;
 }
 
+interface TagGenerationResponse {
+  tags: string[];
+  rationale: string;
+}
+
 // Analyze a feature to recommend a category and provide rationale
 export async function analyzeFeature(
   name: string, 

@@ -64,6 +64,7 @@ export const features = pgTable("features", {
   perspective: text("perspective", { enum: ["technical", "business", "ux", "security"] }).notNull(),
   category: text("category", { enum: ["mvp", "launch", "v1.5", "v2.0", "rejected"] }).notNull(),
   aiEnhanced: jsonb("ai_enhanced"),
+  tags: jsonb("tags").default('[]'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -74,6 +75,7 @@ export const insertFeatureSchema = createInsertSchema(features).pick({
   perspective: true,
   category: true,
   aiEnhanced: true,
+  tags: true,
 });
 
 export type InsertFeature = z.infer<typeof insertFeatureSchema>;
