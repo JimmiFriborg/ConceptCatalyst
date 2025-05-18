@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RocketIcon, FlagIcon, Bot } from "lucide-react";
+import { RocketIcon, FlagIcon, Bot, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { enhanceFeatureDescription, updateFeature } from "@/lib/api";
+import { enhanceFeatureDescription, updateFeature, generateTags } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { Perspective, Category, Feature } from "@shared/schema";
@@ -49,6 +49,7 @@ export function FeatureCard({
   onAction
 }: FeatureCardProps) {
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [isTagging, setIsTagging] = useState(false);
   const { toast } = useToast();
   
   // Ensure proper feature drag behavior

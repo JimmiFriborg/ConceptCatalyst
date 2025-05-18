@@ -66,6 +66,15 @@ export async function enhanceFeatureDescription(data: {
   return res.json();
 }
 
+export async function generateTags(data: {
+  featureName: string;
+  featureDescription: string;
+  projectContext?: string;
+}) {
+  const res = await apiRequest("POST", "/api/ai/generate-tags", data);
+  return res.json();
+}
+
 export async function generateFeatureSuggestions(projectId: number, perspective: Perspective) {
   const res = await apiRequest("POST", `/api/projects/${projectId}/ai/suggest-features`, { perspective });
   return res.json();
