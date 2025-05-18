@@ -57,11 +57,17 @@ export class MemStorage implements IStorage {
     this.featureCurrentId = 1;
     this.suggestionCurrentId = 1;
     
-    // Load any persisted data from localStorage
+    // Load any persisted data from global storage
     this.loadPersistedData();
     
     // Set up auto-save on a regular interval
-    setInterval(() => this.persistData(), 5000);
+    setInterval(() => this.persistData(), 2000); // Save more frequently (every 2 seconds)
+    
+    // Also ensure data is saved before shutdown
+    process.on('beforeExit', () => {
+      console.log('Server shutting down, persisting data...');
+      this.persistData();
+    });
   }
   
   // Persist data to localStorage

@@ -77,6 +77,29 @@ const extractProjectData = (text: string) => {
     }
   }
   
+  // Process features from the "Relevant Features & Functionalities" section
+  const features = sectionMap["Relevant Features & Functionalities"].map(featureText => {
+    // Split feature text into name and description (if it contains a colon)
+    const parts = featureText.split(/:\s*/);
+    
+    if (parts.length > 1) {
+      return {
+        name: parts[0].trim(),
+        description: parts.slice(1).join(": ").trim(),
+        perspective: getFeaturePerspective(parts[0], parts.slice(1).join(": ")),
+        category: "mvp" as const // Default to MVP, can be changed later
+      };
+    } else {
+      // If no obvious separation, use the whole text as name
+      return {
+        name: featureText.trim(),
+        description: "Imported from concept document",
+        perspective: getFeaturePerspective(featureText, ""),
+        category: "mvp" as const
+      };
+    }
+  });
+  
   // Convert to the project format needed for the API
   return {
     name: sectionMap["Project Name"][0] || "Imported Project",
@@ -86,7 +109,52 @@ const extractProjectData = (text: string) => {
     inScope: sectionMap["In-Scope Functionality"],
     outOfScope: sectionMap["Out-of-Scope Functionality"],
     constraints: sectionMap["Constraints"],
+    features: features
   };
+};
+
+// Helper to analyze feature text and determine its perspective
+const getFeaturePerspective = (name: string, description: string = ""): "technical" | "business" | "ux" | "security" => {
+  const combinedText = (name + " " + description).toLowerCase();
+  
+  const technicalTerms = ["api", "framework", "integration", "data", "performance", "metrics", "tracking", "monitoring", "automation", "testing"];
+  const securityTerms = ["security", "authentication", "encryption", "privacy", "compliance", "auth", "permission", "role", "protect", "secure"];
+  const uxTerms = ["ui", "ux", "user", "interface", "experience", "design", "accessibility", "responsive", "mobile", "desktop", "layout", "onboarding", "profile"];
+  const businessTerms = ["revenue", "payment", "subscription", "tier", "analytics", "pricing", "roi", "monetization", "conversion", "customer", "market"];
+  
+  let matchCounts = {
+    technical: 0,
+    security: 0,
+    ux: 0,
+    business: 0
+  };
+  
+  // Count matches for each perspective
+  technicalTerms.forEach(term => {
+    if (combinedText.includes(term)) matchCounts.technical++;
+  });
+  
+  securityTerms.forEach(term => {
+    if (combinedText.includes(term)) matchCounts.security++;
+  });
+  
+  uxTerms.forEach(term => {
+    if (combinedText.includes(term)) matchCounts.ux++;
+  });
+  
+  businessTerms.forEach(term => {
+    if (combinedText.includes(term)) matchCounts.business++;
+  });
+  
+  // Find the perspective with the most matches
+  const maxCount = Math.max(matchCounts.technical, matchCounts.security, matchCounts.ux, matchCounts.business);
+  
+  if (maxCount === 0) return "business"; // Default if no matches
+  
+  if (matchCounts.technical === maxCount) return "technical";
+  if (matchCounts.security === maxCount) return "security";
+  if (matchCounts.ux === maxCount) return "ux";
+  return "business";
 };
 
 export function ImportProjectDialog({ open, onOpenChange }: ImportProjectDialogProps) {
@@ -121,19 +189,54 @@ export function ImportProjectDialog({ open, onOpenChange }: ImportProjectDialogP
         constraints: projectData.constraints,
       });
       
-      // Invalidate cache to refresh project list
+      // Create the features for this project
+      if (projectData.features && projectData.features.length > 0) {
+        try {
+          // Add each feature to the project
+          const createFeaturesPromises = projectData.features.map(feature => 
+            fetch(`/api/projects/${project.id}/features`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                name: feature.name,
+                description: feature.description,
+                perspective: feature.perspective,
+                category: feature.category
+              }),
+            }).then(res => {
+              if (!res.ok) throw new Error(`Failed to create feature: ${feature.name}`);
+              return res.json();
+            })
+          );
+          
+          // Wait for all features to be created
+          await Promise.all(createFeaturesPromises);
+          
+          console.log(`Created ${projectData.features.length} features for project`);
+        } catch (featureError) {
+          console.error("Error creating features:", featureError);
+          // We'll continue even if feature creation failed
+        }
+      }
+      
+      // Invalidate cache to refresh project list and features
       queryClient.invalidateQueries({
         queryKey: ['/api/projects']
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/projects/${project.id}/features`]
       });
       
       // Success message
       toast({
         title: "Project imported successfully",
-        description: `Created project '${project.name}'`,
+        description: `Created project '${project.name}' with ${projectData.features?.length || 0} features`,
       });
       
-      // Navigate to the new project
-      navigate(`/project/${project.id}`);
+      // Navigate to the new project (using correct path)
+      navigate(`/projects/${project.id}`);
       
       // Close the dialog
       onOpenChange(false);

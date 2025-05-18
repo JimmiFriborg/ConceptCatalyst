@@ -11,6 +11,11 @@ declare global {
   };
 }
 
+// Initialize global storage if not already set
+if (!global.persistedAppData) {
+  global.persistedAppData = {};
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
