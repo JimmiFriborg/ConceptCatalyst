@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -95,6 +95,9 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
     outOfScope?: string[];
   }>({});
   
+  // Cache key for storing form data in localStorage
+  const CACHE_KEY = 'project_wizard_cache';
+  
   // Wizard steps
   const totalSteps = 4;
   const stepTitles = [
@@ -104,10 +107,44 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
     "AI Features"
   ];
   
-  // Initialize form with defaults
+  // Function to save form data to localStorage
+  const saveFormData = (data: Partial<FormValues>) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.warn('Failed to save form data to localStorage:', error);
+    }
+  };
+  
+  // Function to load form data from localStorage
+  const loadFormData = (): Partial<FormValues> | null => {
+    try {
+      const savedData = localStorage.getItem(CACHE_KEY);
+      if (savedData) {
+        return JSON.parse(savedData);
+      }
+    } catch (error) {
+      console.warn('Failed to load form data from localStorage:', error);
+    }
+    return null;
+  };
+  
+  // Function to clear saved form data
+  const clearFormData = () => {
+    try {
+      localStorage.removeItem(CACHE_KEY);
+    } catch (error) {
+      console.warn('Failed to clear form data from localStorage:', error);
+    }
+  };
+  
+  // Get any cached form data
+  const cachedData = loadFormData();
+  
+  // Initialize form with cached data or defaults
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: cachedData || {
       name: "",
       description: "",
       mission: "",
@@ -121,12 +158,42 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
     mode: "onChange"
   });
   
+  // Set up auto-save for form changes
+  useEffect(() => {
+    // Create a subscription to watch for form changes
+    const subscription = form.watch((value) => {
+      // Debounce the save to avoid excessive writes
+      const timeoutId = setTimeout(() => {
+        saveFormData(value as FormValues);
+      }, 1000); // Save 1 second after typing stops
+      
+      // Clean up timeout on next change
+      return () => clearTimeout(timeoutId);
+    });
+    
+    // Clean up subscription on component unmount
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
+  
   // Reset form and step when dialog is opened/closed
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      form.reset();
-      setStep(1);
+      // When closing, save current form data to cache
+      saveFormData(form.getValues());
+    } else {
+      // When opening, load any cached data
+      const cachedData = loadFormData();
+      if (cachedData) {
+        form.reset(cachedData);
+        // Optionally show a toast notification about restored data
+        toast({
+          title: "Recovered unsaved data",
+          description: "Your previous progress has been restored.",
+        });
+      }
     }
+    
+    setStep(1);
     onOpenChange(open);
   };
 
@@ -146,12 +213,17 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
       if (!isValid) return; // Stop if validation fails
     }
     
+    // Save form data when advancing to the next step
+    saveFormData(form.getValues());
+    
     // If we get here, validation passed or wasn't needed
     setStep(current => Math.min(current + 1, totalSteps));
   };
 
   // Handle going to the previous step
   const handlePrevious = () => {
+    // Save form data when going back
+    saveFormData(form.getValues());
     setStep(current => Math.max(current - 1, 1));
   };
 
@@ -192,6 +264,9 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
         });
       }
       
+      // Project created successfully - clear the form cache
+      clearFormData();
+      
       // Invalidate queries to refresh
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       
@@ -211,9 +286,12 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
         navigate(`/projects/${project.id}`);
       }
     } catch (error) {
+      // On error, save the form data so user doesn't lose their work
+      saveFormData(form.getValues());
+      
       toast({
         title: "Error",
-        description: "Failed to create project.",
+        description: "Failed to create project. Your progress has been saved.",
         variant: "destructive",
       });
     } finally {
