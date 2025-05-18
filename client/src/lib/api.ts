@@ -2,7 +2,15 @@ import { apiRequest } from "./queryClient";
 import { type Category, type Perspective } from "@shared/schema";
 
 // Project API
-export async function createProject(data: { name: string, description?: string }) {
+export async function createProject(data: { 
+  name: string, 
+  description?: string,
+  mission?: string,
+  goals?: string[],
+  inScope?: string[],
+  outOfScope?: string[],
+  constraints?: string[]
+}) {
   const res = await apiRequest("POST", "/api/projects", data);
   return res.json();
 }

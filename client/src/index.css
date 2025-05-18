@@ -146,3 +146,8 @@ html {
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
+
+/* Fix iOS text area scrolling */
+textarea {
+  -webkit-overflow-scrolling: touch;
+}

@@ -34,8 +34,7 @@ import {
   AlertTriangle, 
   Check,
   Asterisk,
-  Sparkles,
-  Switch
+  Sparkles
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,11 +140,14 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
           ? ["inScope", "outOfScope"]
           : [];
 
-    const isValid = await form.trigger(fieldsToValidate as any);
-    
-    if (isValid) {
-      setStep(current => Math.min(current + 1, totalSteps));
+    // Only validate if there are fields to validate
+    if (fieldsToValidate.length > 0) {
+      const isValid = await form.trigger(fieldsToValidate as any);
+      if (!isValid) return; // Stop if validation fails
     }
+    
+    // If we get here, validation passed or wasn't needed
+    setStep(current => Math.min(current + 1, totalSteps));
   };
 
   // Handle going to the previous step
@@ -260,7 +262,7 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
                     <FormControl>
                       <Textarea 
                         placeholder="Describe your project in a few sentences" 
-                        className="min-h-[100px]"
+                        className="min-h-[100px] max-h-[300px] overflow-y-auto"
                         {...field} 
                       />
                     </FormControl>
