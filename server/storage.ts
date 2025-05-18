@@ -47,6 +47,7 @@ export class MemStorage implements IStorage {
   private suggestionCurrentId: number;
 
   constructor() {
+    // Initialize with empty maps
     this.users = new Map();
     this.projects = new Map();
     this.features = new Map();
@@ -55,6 +56,66 @@ export class MemStorage implements IStorage {
     this.projectCurrentId = 1;
     this.featureCurrentId = 1;
     this.suggestionCurrentId = 1;
+    
+    // Load any persisted data from localStorage
+    this.loadPersistedData();
+    
+    // Set up auto-save on a regular interval
+    setInterval(() => this.persistData(), 5000);
+  }
+  
+  // Persist data to localStorage
+  private persistData(): void {
+    try {
+      const dataToSave = {
+        users: Array.from(this.users.entries()),
+        projects: Array.from(this.projects.entries()),
+        features: Array.from(this.features.entries()),
+        aiSuggestions: Array.from(this.aiSuggestions.entries()),
+        userCurrentId: this.userCurrentId,
+        projectCurrentId: this.projectCurrentId,
+        featureCurrentId: this.featureCurrentId,
+        suggestionCurrentId: this.suggestionCurrentId
+      };
+      
+      // Save to global in-memory variable that persists between server restarts
+      if (global.persistedAppData === undefined) {
+        global.persistedAppData = {};
+      }
+      global.persistedAppData.memStorage = dataToSave;
+      
+      console.log(`Data persisted: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
+    } catch (error) {
+      console.error('Failed to persist data:', error);
+    }
+  }
+  
+  // Load data from localStorage
+  private loadPersistedData(): void {
+    try {
+      // Check if we have persisted data
+      if (global.persistedAppData && global.persistedAppData.memStorage) {
+        const data = global.persistedAppData.memStorage;
+        
+        // Restore maps
+        this.users = new Map(data.users);
+        this.projects = new Map(data.projects);
+        this.features = new Map(data.features);
+        this.aiSuggestions = new Map(data.aiSuggestions);
+        
+        // Restore IDs
+        this.userCurrentId = data.userCurrentId;
+        this.projectCurrentId = data.projectCurrentId;
+        this.featureCurrentId = data.featureCurrentId;
+        this.suggestionCurrentId = data.suggestionCurrentId;
+        
+        console.log(`Data loaded: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
+      } else {
+        console.log('No persisted data found, starting with empty storage');
+      }
+    } catch (error) {
+      console.error('Failed to load persisted data:', error);
+    }
   }
   
   async getChildProjects(parentId: number): Promise<Project[]> {
