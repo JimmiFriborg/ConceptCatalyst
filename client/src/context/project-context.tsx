@@ -1,75 +1,65 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, ReactNode, useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { type Feature, type AiSuggestion, type Project } from "@shared/schema";
 
-interface ProjectContextType {
-  currentProjectId: number | null;
-  setCurrentProjectId: (id: number | null) => void;
-  currentFeatureIndex: number;
-  setCurrentFeatureIndex: (index: number) => void;
-  features: Feature[];
-  setFeatures: (features: Feature[]) => void;
-  aiSuggestions: AiSuggestion[];
-  setAiSuggestions: (suggestions: AiSuggestion[]) => void;
+interface ProjectContextProps {
+  children: ReactNode;
 }
 
-const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
+interface ProjectContextType {
+  data: any[];
+  isLoading: boolean;
+  isError: boolean;
+  refetch: () => void;
+}
 
-export function ProjectProvider({ children }: { children: ReactNode }) {
-  const [currentProjectId, setCurrentProjectId] = useState<number | null>(null);
-  const [currentFeatureIndex, setCurrentFeatureIndex] = useState<number>(0);
-  const [features, setFeatures] = useState<Feature[]>([]);
-  const [aiSuggestions, setAiSuggestions] = useState<AiSuggestion[]>([]);
+const ProjectContext = createContext<ProjectContextType | null>(null);
 
-  const value = {
-    currentProjectId,
-    setCurrentProjectId,
-    currentFeatureIndex,
-    setCurrentFeatureIndex,
-    features,
-    setFeatures,
-    aiSuggestions,
-    setAiSuggestions,
+export function ProjectProvider({ children }: ProjectContextProps) {
+  const fetchProjects = async () => {
+    const response = await fetch("/api/projects");
+    if (!response.ok) {
+      throw new Error("Failed to fetch projects");
+    }
+    return response.json();
   };
 
+  const { 
+    data = [], 
+    isLoading, 
+    isError,
+    refetch
+  } = useQuery({
+    queryKey: ["/api/projects"],
+    queryFn: fetchProjects,
+  });
+
   return (
-    <ProjectContext.Provider value={value}>
+    <ProjectContext.Provider value={{ data, isLoading, isError, refetch }}>
       {children}
     </ProjectContext.Provider>
   );
 }
 
-export function useProject() {
+export function useProjects() {
   const context = useContext(ProjectContext);
-  if (context === undefined) {
-    throw new Error("useProject must be used within a ProjectProvider");
+  if (!context) {
+    throw new Error("useProjects must be used within a ProjectProvider");
   }
   return context;
 }
 
-export function useProjects() {
-  return useQuery<Project[]>({
-    queryKey: ["/api/projects"],
-  });
-}
+// Single project fetching hook
+export function useProject(id: number) {
+  const fetchProject = async () => {
+    const response = await fetch(`/api/projects/${id}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch project");
+    }
+    return response.json();
+  };
 
-export function useProjectDetails(projectId: number | null) {
-  return useQuery<Project>({
-    queryKey: projectId ? [`/api/projects/${projectId}`] : null,
-    enabled: !!projectId,
-  });
-}
-
-export function useProjectFeatures(projectId: number | null) {
-  return useQuery<Feature[]>({
-    queryKey: projectId ? [`/api/projects/${projectId}/features`] : null,
-    enabled: !!projectId,
-  });
-}
-
-export function useProjectSuggestions(projectId: number | null) {
-  return useQuery<AiSuggestion[]>({
-    queryKey: projectId ? [`/api/projects/${projectId}/ai/suggestions`] : null,
-    enabled: !!projectId,
+  return useQuery({
+    queryKey: ["/api/projects", id],
+    queryFn: fetchProject,
   });
 }

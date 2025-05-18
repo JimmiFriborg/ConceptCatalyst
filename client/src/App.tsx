@@ -18,10 +18,10 @@ function Router() {
       </Route>
       <Route path="/board/projects/:projectId">
         {params => {
-          const ProjectBoard = React.lazy(() => import("@/pages/project-board"));
+          const QuickProjectView = React.lazy(() => import("@/pages/quick-project-view"));
           return (
             <React.Suspense fallback={<div className="flex items-center justify-center h-screen">Loading project board...</div>}>
-              <ProjectBoard />
+              <QuickProjectView />
             </React.Suspense>
           );
         }}

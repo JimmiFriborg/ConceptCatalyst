@@ -4,8 +4,7 @@ import { useProjects } from "@/context/project-context";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-// Using a simplified wizard with direct form inputs
-import { SimpleProjectWizard } from "@/components/simple-project-wizard";
+import { SimpleCreateProject } from "@/components/simple-create-project";
 import { ImportProjectDialog } from "@/components/import-project-dialog";
 import { PlusCircle, FolderOpen, Folder, Clock, ArrowRight, FileUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -194,7 +193,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      <SimpleProjectWizard
+      <SimpleCreateProject
         open={isAddProjectOpen}
         onOpenChange={setIsAddProjectOpen}
       />
