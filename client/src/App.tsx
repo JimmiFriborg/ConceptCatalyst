@@ -16,14 +16,13 @@ function Router() {
       <Route path="/projects/:id">
         {params => <ProjectView id={parseInt(params.id)} />}
       </Route>
-      <Route path="/enhanced/projects/:projectId">
+      <Route path="/board/projects/:projectId">
         {params => {
-          // Use dynamic import for the enhanced project view
-          const EnhancedProjectView = lazy(() => import("@/pages/enhanced-project-view"));
+          const ProjectBoard = React.lazy(() => import("@/pages/project-board"));
           return (
-            <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading enhanced view...</div>}>
-              <EnhancedProjectView />
-            </Suspense>
+            <React.Suspense fallback={<div className="flex items-center justify-center h-screen">Loading project board...</div>}>
+              <ProjectBoard />
+            </React.Suspense>
           );
         }}
       </Route>

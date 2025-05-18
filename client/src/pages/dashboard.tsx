@@ -109,14 +109,24 @@ export default function Dashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardFooter className="flex justify-between pt-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDeleteProject(project.id)}
-                    >
-                      <Folder className="mr-2 h-4 w-4" />
-                      Delete
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteProject(project.id)}
+                      >
+                        <Folder className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/board/projects/${project.id}`)}
+                      >
+                        <FolderOpen className="mr-2 h-4 w-4" />
+                        Board View
+                      </Button>
+                    </div>
                     <Button 
                       onClick={() => handleOpenProject(project.id)}
                       size="sm"
