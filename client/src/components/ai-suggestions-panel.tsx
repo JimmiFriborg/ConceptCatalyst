@@ -72,7 +72,8 @@ const categoryBadgeClasses: Record<Category, string> = {
   "mvp": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
   "launch": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
   "v1.5": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100",
-  "v2.0": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
+  "v2.0": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100",
+  "rejected": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
 };
 
 // Map categories to readable names
@@ -80,19 +81,26 @@ const categoryNames: Record<Category, string> = {
   "mvp": "MVP (Must Have)",
   "launch": "Launch",
   "v1.5": "Version 1.5",
-  "v2.0": "Version 2.0"
+  "v2.0": "Version 2.0",
+  "rejected": "Rejected"
 };
 
 export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProps) {
-  const [perspective, setPerspective] = useState<Perspective>("technical");
+  const [perspective, setPerspective] = useState<Perspective | "all">("technical");
   const [isGenerating, setIsGenerating] = useState(false);
   const { currentProjectId, aiSuggestions } = useProject();
+  // Use projectSuggestions hook to make sure we get fresh data
+  const { data: freshSuggestions = [] } = useProjectSuggestions(currentProjectId);
   const { toast } = useToast();
 
-  // Filter suggestions by perspective
-  const filteredSuggestions = aiSuggestions.filter(suggestion => 
-    perspective === suggestion.perspective || perspective === "all"
-  );
+  // Define "all" as a string type for perspective filtering
+  type FilterPerspective = Perspective | "all";
+  
+  // Use the freshSuggestions data and filter by perspective
+  const filteredSuggestions = (freshSuggestions || []).filter(suggestion => {
+    // Handle both specific perspective and "all" filtering
+    return perspective === suggestion.perspective || perspective === "all";
+  });
 
   // Generate AI suggestions
   const handleRefreshSuggestions = async () => {
@@ -100,7 +108,9 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
     
     setIsGenerating(true);
     try {
-      await generateFeatureSuggestions(currentProjectId, perspective);
+      // Only pass valid perspective values to the API
+      const apiPerspective = perspective === "all" ? "technical" : perspective;
+      await generateFeatureSuggestions(currentProjectId, apiPerspective);
       
       // Refresh suggestions data
       queryClient.invalidateQueries({ 
@@ -109,7 +119,7 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
       
       toast({
         title: "Suggestions generated",
-        description: `AI has generated new ${perspectiveNames[perspective]} feature suggestions.`,
+        description: `AI has generated new ${perspective === "all" ? "mixed" : perspectiveNames[perspective]} feature suggestions.`,
       });
     } catch (error) {
       toast({
