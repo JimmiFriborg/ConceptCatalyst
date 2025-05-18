@@ -424,30 +424,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Project not found" });
       }
       
-      const schema = z.object({
-        perspective: perspectiveEnum
-      });
+      // Log API request details for debugging
+      console.log(`API request to generate features for project ${projectId}`, req.body);
       
-      const validateResult = schema.safeParse(req.body);
-      
-      if (!validateResult.success) {
+      // Simplified validation for maximum stability
+      const perspective = req.body.perspective;
+      if (!perspective || !['technical', 'business', 'ux', 'security'].includes(perspective)) {
         return res.status(400).json({ 
-          message: "Invalid perspective", 
-          errors: validateResult.error.format() 
+          message: "Invalid perspective. Must be technical, business, ux, or security." 
         });
       }
       
       const features = await storage.getFeatures(projectId);
       const featuresList = features.map(f => ({
         name: f.name,
-        description: f.description
+        description: f.description || ""
       }));
       
+      // Provide detailed project name and description for better context
+      const projectName = project.name || "Untitled Project";
+      const projectDescription = project.description || "No description provided";
+      
+      console.log(`Calling OpenAI to generate suggestions for ${projectName} with ${perspective} perspective`);
+      
       const suggestions = await generateFeatureSuggestions(
-        project.name,
-        project.description || "",
+        projectName,
+        projectDescription,
         featuresList,
-        validateResult.data.perspective
+        perspective
       );
       
       // Store the suggestions in the database

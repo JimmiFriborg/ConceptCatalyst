@@ -178,16 +178,27 @@ export async function generateFeatureSuggestions(
   perspective: Perspective;
   suggestedCategory: Category;
 }[]> {
-  return apiRequest<{
-    name: string;
-    description: string;
-    perspective: Perspective;
-    suggestedCategory: Category;
-  }[]>(
-    `/api/projects/${projectId}/ai/suggest-features`, 
-    'POST', 
-    { perspective }
-  );
+  // Add error handling and detailed logging for troubleshooting
+  try {
+    console.log(`Generating feature suggestions for project ${projectId} with perspective ${perspective}`);
+    
+    const result = await apiRequest<{
+      name: string;
+      description: string;
+      perspective: Perspective;
+      suggestedCategory: Category;
+    }[]>(
+      `/api/projects/${projectId}/ai/suggest-features`, 
+      'POST', 
+      { perspective }
+    );
+    
+    console.log(`Successfully generated ${result?.length || 0} suggestions`);
+    return result;
+  } catch (error) {
+    console.error('Error generating feature suggestions:', error);
+    throw error;
+  }
 }
 
 export async function generateProjectFeatureSuggestions(

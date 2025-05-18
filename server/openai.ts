@@ -294,6 +294,9 @@ export async function generateFeatureSuggestions(
   perspective: Perspective
 ): Promise<FeatureSuggestionResponse[]> {
   try {
+    console.log(`OpenAI API - Generating suggestions for project: ${projectName}, perspective: ${perspective}`);
+    console.log(`OpenAI API Key available: ${!!process.env.OPENAI_API_KEY}`);
+    
     const existingFeaturesText = existingFeatures
       .map(f => `- ${f.name}: ${f.description}`)
       .join("\n");
