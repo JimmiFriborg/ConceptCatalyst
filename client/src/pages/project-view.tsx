@@ -25,6 +25,14 @@ export default function ProjectView({ id }: ProjectViewProps) {
   const [_, navigate] = useLocation();
   const isMobile = useMobile();
   const [isAddFeatureOpen, setIsAddFeatureOpen] = useState(false);
+  const [isBranchDialogOpen, setIsBranchDialogOpen] = useState(false);
+  const [branchRecommendation, setBranchRecommendation] = useState<{
+    shouldBranch: boolean;
+    reason: string;
+    suggestedName?: string;
+  } | null>(null);
+  const [isAnalyzingBranch, setIsAnalyzingBranch] = useState(false);
+  
   const { 
     setCurrentProjectId,
     currentFeatureIndex,
@@ -79,6 +87,36 @@ export default function ProjectView({ id }: ProjectViewProps) {
       setCurrentFeatureIndex((prev: number) => 
         prev < features.length - 1 ? prev + 1 : 0
       );
+    }
+  };
+
+  // Analyze features for branching
+  const handleAnalyzeBranching = async () => {
+    if (!features || features.length < 3) {
+      return; // Need enough features to analyze
+    }
+    
+    try {
+      setIsAnalyzingBranch(true);
+      
+      // Get the last 3 added features to check if they're drifting from the project scope
+      const recentFeatureIds = [...features]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 3)
+        .map(f => f.id);
+      
+      // Call API to analyze if these features suggest branching
+      const result = await analyzeBranching(id, recentFeatureIds);
+      setBranchRecommendation(result);
+      
+      // If the recommendation is to branch, show the dialog
+      if (result.shouldBranch) {
+        setIsBranchDialogOpen(true);
+      }
+    } catch (error) {
+      console.error("Error analyzing for branching:", error);
+    } finally {
+      setIsAnalyzingBranch(false);
     }
   };
 
@@ -161,6 +199,14 @@ export default function ProjectView({ id }: ProjectViewProps) {
           </div>
           
           <div className="flex items-center space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={handleAnalyzeBranching}
+              disabled={isAnalyzingBranch || !features || features.length < 3}
+            >
+              <GitBranch className="mr-2 h-4 w-4" />
+              {isAnalyzingBranch ? "Analyzing..." : "Analyze Branch"}
+            </Button>
             <Button 
               variant="outline" 
               onClick={handleExport}
@@ -255,10 +301,27 @@ export default function ProjectView({ id }: ProjectViewProps) {
         <AiSuggestionsPanel isLoading={isSuggestionsLoading} />
       )}
       
+      {/* Branch Projects Section */}
+      {!isMobile && (
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-4xl mx-auto">
+            <BranchProjectsSection projectId={id} />
+          </div>
+        </div>
+      )}
+      
       {/* Add Feature Dialog */}
       <AddFeatureDialog
         open={isAddFeatureOpen}
         onOpenChange={setIsAddFeatureOpen}
+      />
+      
+      {/* Branch Recommendation Dialog */}
+      <BranchRecommendationDialog
+        open={isBranchDialogOpen}
+        onOpenChange={setIsBranchDialogOpen}
+        parentProjectId={id}
+        branchRecommendation={branchRecommendation}
       />
     </div>
   );
