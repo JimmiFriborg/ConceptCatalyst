@@ -32,6 +32,10 @@ interface FeatureSuggestionResponse {
   suggestedCategory: Category;
 }
 
+interface ProjectInfoFeatureSuggestionResponse {
+  suggestions: FeatureSuggestionResponse[];
+}
+
 interface TagGenerationResponse {
   tags: string[];
   rationale: string;
@@ -231,7 +235,7 @@ export async function generateTags(
 
 export async function generateFeaturesFromProjectInfo(
   projectName: string,
-  projectMission?: string,
+  projectMission?: string | null,
   goals?: string[],
   inScope?: string[],
   outOfScope?: string[]

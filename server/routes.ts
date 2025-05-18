@@ -559,7 +559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate feature suggestions based on project information
       const suggestions = await generateFeaturesFromProjectInfo(
         project.name,
-        mission || project.mission,
+        mission || project.mission || undefined,
         goals || [],
         inScope || [],
         outOfScope || []
