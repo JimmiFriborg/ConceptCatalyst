@@ -29,7 +29,8 @@ const categoryNames: Record<Category, string> = {
   "mvp": "MVP (Must Have)",
   "launch": "Launch",
   "v1.5": "Version 1.5",
-  "v2.0": "Version 2.0"
+  "v2.0": "Version 2.0",
+  "rejected": "Rejected"
 };
 
 // Map categories to badge styles
@@ -37,7 +38,8 @@ const categoryBadgeClasses: Record<Category, string> = {
   "mvp": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
   "launch": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
   "v1.5": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100",
-  "v2.0": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
+  "v2.0": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100",
+  "rejected": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
 };
 
 export function FeatureCard({ 

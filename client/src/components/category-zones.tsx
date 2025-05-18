@@ -91,6 +91,7 @@ export function CategoryZones() {
       case "launch": return "Launch";
       case "v1.5": return "Version 1.5";
       case "v2.0": return "Version 2.0";
+      case "rejected": return "Rejected";
       default: return category;
     }
   };
@@ -112,6 +113,8 @@ export function CategoryZones() {
         return "Enhancement features for mid-term update";
       case "v2.0":
         return "Future features for major update";
+      case "rejected":
+        return "Features that were considered but decided against";
       default:
         return "";
     }
@@ -128,6 +131,8 @@ export function CategoryZones() {
         return <Target className="h-7 w-7 text-purple-300 dark:text-purple-500" />;
       case "v2.0":
         return <Sparkles className="h-7 w-7 text-orange-300 dark:text-orange-500" />;
+      case "rejected":
+        return <XCircle className="h-7 w-7 text-red-300 dark:text-red-500" />;
       default:
         return null;
     }
@@ -141,7 +146,7 @@ export function CategoryZones() {
             Drag feature to prioritize
           </h3>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {/* MVP Zone */}
             <div 
               className="category-zone category-zone-mvp border-2 border-dashed rounded-lg p-4 h-64 flex flex-col"
@@ -244,6 +249,33 @@ export function CategoryZones() {
                 <div className="text-center">
                   {getCategoryIcon("v2.0")}
                   <p className="mt-2 text-sm text-orange-400 dark:text-orange-500">
+                    Drop feature here
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Rejected Zone */}
+            <div 
+              className="category-zone category-zone-rejected border-2 border-dashed rounded-lg p-4 h-64 flex flex-col"
+              data-category="rejected"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-red-800 dark:text-red-300">
+                  Rejected
+                </h4>
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 text-xs font-medium">
+                  {getCategoryCount("rejected")}
+                </span>
+              </div>
+              <p className="text-xs text-red-600 dark:text-red-400 mb-4">
+                {getCategoryDescription("rejected")}
+              </p>
+              
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  {getCategoryIcon("rejected")}
+                  <p className="mt-2 text-sm text-red-400 dark:text-red-500">
                     Drop feature here
                   </p>
                 </div>
