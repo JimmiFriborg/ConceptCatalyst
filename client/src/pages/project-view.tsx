@@ -11,6 +11,7 @@ import { BranchProjectsSection } from "@/components/branch-projects-section";
 import { DriftDetectionAlert } from "@/components/drift-detection-alert";
 import { ProjectEvaluation } from "@/components/project-evaluation";
 import { PriorityVisualization } from "@/components/priority-visualization";
+import { FrankensteinFeatureDialog } from "@/components/frankenstein-feature-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Menu, PlusCircle, Download, ArrowLeft, ArrowRight, GitBranch, BarChart2 } from "lucide-react";
@@ -30,6 +31,7 @@ export default function ProjectView({ id }: ProjectViewProps) {
   const [isAddFeatureOpen, setIsAddFeatureOpen] = useState(false);
   const [isBranchDialogOpen, setIsBranchDialogOpen] = useState(false);
   const [showVisualization, setShowVisualization] = useState(false);
+  const [isFrankensteinOpen, setIsFrankensteinOpen] = useState(false);
   
   const { 
     setCurrentProjectId,
@@ -185,6 +187,16 @@ export default function ProjectView({ id }: ProjectViewProps) {
             >
               <Download className="mr-2 h-4 w-4" />
               Export
+            </Button>
+            <Button 
+              variant="secondary"
+              onClick={() => setIsFrankensteinOpen(true)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              Feature Concepts
             </Button>
             <Button onClick={() => setIsAddFeatureOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
