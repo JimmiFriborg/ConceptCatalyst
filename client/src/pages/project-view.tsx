@@ -11,7 +11,7 @@ import { BranchProjectsSection } from "@/components/branch-projects-section";
 import { DriftDetectionAlert } from "@/components/drift-detection-alert";
 import { ProjectEvaluation } from "@/components/project-evaluation";
 import { PriorityVisualization } from "@/components/priority-visualization";
-import { FrankensteinFeatureDialog } from "@/components/frankenstein-feature-dialog";
+// Removed Frankenstein Feature dialog to improve stability
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Menu, PlusCircle, Download, ArrowLeft, ArrowRight, GitBranch, BarChart2 } from "lucide-react";
@@ -31,7 +31,6 @@ export default function ProjectView({ id }: ProjectViewProps) {
   const [isAddFeatureOpen, setIsAddFeatureOpen] = useState(false);
   const [isBranchDialogOpen, setIsBranchDialogOpen] = useState(false);
   const [showVisualization, setShowVisualization] = useState(false);
-  const [isFrankensteinOpen, setIsFrankensteinOpen] = useState(false);
   
   const { 
     setCurrentProjectId,
@@ -59,19 +58,29 @@ export default function ProjectView({ id }: ProjectViewProps) {
     return () => setCurrentProjectId(null);
   }, [id, setCurrentProjectId]);
 
-  // Update features in context when data changes
+  // Update features in context when data changes - but only if they actually changed
   useEffect(() => {
     if (features && Array.isArray(features)) {
-      setFeatures(features as Feature[]);
+      // Use JSON comparison to avoid unnecessary updates
+      const currentFeatures = JSON.stringify(features);
+      setFeatures(prevFeatures => {
+        const prevFeaturesStr = JSON.stringify(prevFeatures);
+        return prevFeaturesStr === currentFeatures ? prevFeatures : (features as Feature[]);
+      });
     }
-  }, [features, setFeatures]);
+  }, [features]);
 
-  // Update AI suggestions in context when data changes
+  // Update AI suggestions in context when data changes - but only if they actually changed
   useEffect(() => {
     if (suggestions && Array.isArray(suggestions)) {
-      setAiSuggestions(suggestions);
+      // Use JSON comparison to avoid unnecessary updates
+      const currentSuggestions = JSON.stringify(suggestions);
+      setAiSuggestions(prevSuggestions => {
+        const prevSuggestionsStr = JSON.stringify(prevSuggestions);
+        return prevSuggestionsStr === currentSuggestions ? prevSuggestions : suggestions;
+      });
     }
-  }, [suggestions, setAiSuggestions]);
+  }, [suggestions]);
 
   // Handle navigation between features
   const handlePreviousFeature = () => {
@@ -187,16 +196,6 @@ export default function ProjectView({ id }: ProjectViewProps) {
             >
               <Download className="mr-2 h-4 w-4" />
               Export
-            </Button>
-            <Button 
-              variant="secondary"
-              onClick={() => setIsFrankensteinOpen(true)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
-              Feature Concepts
             </Button>
             <Button onClick={() => setIsAddFeatureOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -323,12 +322,7 @@ export default function ProjectView({ id }: ProjectViewProps) {
         onOpenChange={setIsAddFeatureOpen}
       />
       
-      {/* Frankenstein Feature Dialog */}
-      <FrankensteinFeatureDialog
-        open={isFrankensteinOpen}
-        onOpenChange={setIsFrankensteinOpen}
-        projectId={id}
-      />
+      {/* Removed Frankenstein Feature Dialog to improve stability */}
       
       {/* We no longer need the branch recommendation dialog here as it's handled by the DriftDetectionAlert component */}
     </div>

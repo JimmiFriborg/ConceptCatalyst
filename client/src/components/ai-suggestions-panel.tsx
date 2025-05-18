@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Perspective, AiSuggestion, Category } from "@shared/schema";
-import { useProject } from "@/context/project-context";
+import { useProject, useProjectSuggestions } from "@/context/project-context";
 import { generateFeatureSuggestions } from "@/lib/api";
 
 import { queryClient } from "@/lib/queryClient";
