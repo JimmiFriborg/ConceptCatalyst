@@ -41,12 +41,16 @@ export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  parentId: integer("parent_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertProjectSchema = createInsertSchema(projects).pick({
   name: true,
   description: true,
+  parentId: true,
+  isBranch: true,
+  branchReason: true,
 });
 
 export type InsertProject = z.infer<typeof insertProjectSchema>;

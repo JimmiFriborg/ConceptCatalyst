@@ -15,7 +15,9 @@ export interface IStorage {
   // Project methods
   getProjects(): Promise<Project[]>;
   getProject(id: number): Promise<Project | undefined>;
+  getChildProjects(parentId: number): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
+  branchProject(parentId: number, project: InsertProject): Promise<Project>;
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined>;
   deleteProject(id: number): Promise<boolean>;
   
@@ -53,6 +55,10 @@ export class MemStorage implements IStorage {
     this.projectCurrentId = 1;
     this.featureCurrentId = 1;
     this.suggestionCurrentId = 1;
+  }
+  
+  async getChildProjects(parentId: number): Promise<Project[]> {
+    return Array.from(this.projects.values()).filter(project => project.parentId === parentId);
   }
 
   // User methods
