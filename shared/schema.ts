@@ -32,6 +32,7 @@ export const categoryEnum = z.enum([
   "launch",
   "v1.5",
   "v2.0",
+  "rejected",
 ]);
 
 export type Category = z.infer<typeof categoryEnum>;
@@ -61,7 +62,7 @@ export const features = pgTable("features", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   perspective: text("perspective", { enum: ["technical", "business", "ux", "security"] }).notNull(),
-  category: text("category", { enum: ["mvp", "launch", "v1.5", "v2.0"] }).notNull(),
+  category: text("category", { enum: ["mvp", "launch", "v1.5", "v2.0", "rejected"] }).notNull(),
   aiEnhanced: jsonb("ai_enhanced"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -85,7 +86,7 @@ export const aiSuggestions = pgTable("ai_suggestions", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   perspective: text("perspective", { enum: ["technical", "business", "ux", "security"] }).notNull(),
-  suggestedCategory: text("suggested_category", { enum: ["mvp", "launch", "v1.5", "v2.0"] }).notNull(),
+  suggestedCategory: text("suggested_category", { enum: ["mvp", "launch", "v1.5", "v2.0", "rejected"] }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

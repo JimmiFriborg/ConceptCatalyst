@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Rocket, Flag, Target, Sparkles } from "lucide-react";
+import { Rocket, Flag, Target, Sparkles, XCircle } from "lucide-react";
 import { useProject } from "@/context/project-context";
 import { updateFeatureCategory } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
