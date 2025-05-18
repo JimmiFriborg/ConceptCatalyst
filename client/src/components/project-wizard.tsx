@@ -138,8 +138,9 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
     }
   };
   
-  // Get any cached form data
-  const cachedData = loadFormData();
+  // Temporarily disabled cache loading
+  // const cachedData = loadFormData();
+  const cachedData = null;
   
   // Initialize form with cached data or defaults
   const form = useForm<FormValues>({
@@ -158,39 +159,65 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
     mode: "onChange"
   });
   
-  // Set up auto-save for form changes
-  useEffect(() => {
-    // Create a subscription to watch for form changes
-    const subscription = form.watch((value) => {
-      // Debounce the save to avoid excessive writes
-      const timeoutId = setTimeout(() => {
-        saveFormData(value as FormValues);
-      }, 1000); // Save 1 second after typing stops
-      
-      // Clean up timeout on next change
-      return () => clearTimeout(timeoutId);
-    });
-    
-    // Clean up subscription on component unmount
-    return () => subscription.unsubscribe();
-  }, [form.watch]);
+  // Set up auto-save for form changes - but disable for now to fix the issue
+  // useEffect(() => {
+  //   // Create a subscription to watch for form changes
+  //   const subscription = form.watch((value) => {
+  //     // Debounce the save to avoid excessive writes
+  //     const timeoutId = setTimeout(() => {
+  //       saveFormData(value as FormValues);
+  //     }, 1000); // Save 1 second after typing stops
+  //     
+  //     // Clean up timeout on next change
+  //     return () => clearTimeout(timeoutId);
+  //   });
+  //   
+  //   // Clean up subscription on component unmount
+  //   return () => subscription.unsubscribe();
+  // }, [form.watch]);
   
   // Reset form and step when dialog is opened/closed
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      // When closing, save current form data to cache
-      saveFormData(form.getValues());
+      // When closing, optionally save current form data to cache
+      // But disable for now to fix issues
+      // saveFormData(form.getValues());
+      
+      // Reset form when closing
+      form.reset({
+        name: "",
+        description: "",
+        mission: "",
+        primaryGoal: "",
+        secondaryGoals: "",
+        inScope: "",
+        outOfScope: "",
+        constraints: "",
+        generateAiSuggestions: true
+      });
     } else {
-      // When opening, load any cached data
-      const cachedData = loadFormData();
-      if (cachedData) {
-        form.reset(cachedData);
-        // Optionally show a toast notification about restored data
-        toast({
-          title: "Recovered unsaved data",
-          description: "Your previous progress has been restored.",
-        });
-      }
+      // For now, just ensure we have a clean form when opening
+      form.reset({
+        name: "",
+        description: "",
+        mission: "",
+        primaryGoal: "",
+        secondaryGoals: "",
+        inScope: "",
+        outOfScope: "",
+        constraints: "",
+        generateAiSuggestions: true
+      });
+      
+      // When we fix the caching system later, we can restore this:
+      // const cachedData = loadFormData();
+      // if (cachedData) {
+      //   form.reset(cachedData);
+      //   toast({
+      //     title: "Recovered unsaved data", 
+      //     description: "Your previous progress has been restored."
+      //   });
+      // }
     }
     
     setStep(1);
@@ -213,8 +240,8 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
       if (!isValid) return; // Stop if validation fails
     }
     
-    // Save form data when advancing to the next step
-    saveFormData(form.getValues());
+    // Disabled for now
+    // saveFormData(form.getValues());
     
     // If we get here, validation passed or wasn't needed
     setStep(current => Math.min(current + 1, totalSteps));
@@ -222,8 +249,8 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
 
   // Handle going to the previous step
   const handlePrevious = () => {
-    // Save form data when going back
-    saveFormData(form.getValues());
+    // Disabled for now
+    // saveFormData(form.getValues());
     setStep(current => Math.max(current - 1, 1));
   };
 
