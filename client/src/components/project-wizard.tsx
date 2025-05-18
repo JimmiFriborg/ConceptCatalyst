@@ -33,11 +33,15 @@ import {
   ListChecks, 
   AlertTriangle, 
   Check,
-  Asterisk
+  Asterisk,
+  Sparkles,
+  Switch
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch as UISwitch } from "@/components/ui/switch";
+import { AiFeatureSuggestionDialog } from "@/components/ai-feature-suggestion-dialog";
 
 interface ProjectWizardProps {
   open: boolean;
@@ -71,6 +75,9 @@ const formSchema = z.object({
     message: "Please define what's out of scope for this project.",
   }),
   constraints: z.string().optional(),
+  
+  // AI Features
+  generateAiSuggestions: z.boolean().default(true),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -80,13 +87,22 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
   const { toast } = useToast();
   const [step, setStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newProjectId, setNewProjectId] = useState<number | null>(null);
+  const [showSuggestionsDialog, setShowSuggestionsDialog] = useState(false);
+  const [projectInfo, setProjectInfo] = useState<{
+    mission?: string;
+    goals?: string[];
+    inScope?: string[];
+    outOfScope?: string[];
+  }>({});
   
   // Wizard steps
-  const totalSteps = 3;
+  const totalSteps = 4;
   const stepTitles = [
     "Basic Information",
     "Mission & Goals",
-    "Scope Definition"
+    "Scope Definition",
+    "AI Features"
   ];
   
   // Initialize form with defaults
@@ -101,6 +117,7 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
       inScope: "",
       outOfScope: "",
       constraints: "",
+      generateAiSuggestions: true
     },
     mode: "onChange"
   });
@@ -120,7 +137,9 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
       ? ["name", "description"] 
       : step === 2 
         ? ["mission", "primaryGoal"] 
-        : ["inScope", "outOfScope"];
+        : step === 3
+          ? ["inScope", "outOfScope"]
+          : [];
 
     const isValid = await form.trigger(fieldsToValidate as any);
     
@@ -138,31 +157,38 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      // Format the enhanced project description that combines all wizard fields
-      const enhancedDescription = `
-# ${data.name}
-
-## Project Description
-${data.description}
-
-## Mission Statement
-${data.mission}
-
-## Goals
-- Primary: ${data.primaryGoal}
-${data.secondaryGoals ? `- Secondary Goals: ${data.secondaryGoals}` : ''}
-
-## Project Scope
-- In Scope: ${data.inScope}
-- Out of Scope: ${data.outOfScope}
-${data.constraints ? `- Constraints: ${data.constraints}` : ''}
-`;
-
-      // Create the project with the enhanced description
+      // Process secondary goals into an array
+      const goalsArray = [
+        data.primaryGoal,
+        ...(data.secondaryGoals ? data.secondaryGoals.split("\n").filter(Boolean) : [])
+      ];
+      
+      // Process scope items into arrays
+      const inScopeArray = data.inScope.split("\n").filter(Boolean);
+      const outOfScopeArray = data.outOfScope.split("\n").filter(Boolean);
+      const constraintsArray = data.constraints ? data.constraints.split("\n").filter(Boolean) : [];
+      
+      // Create the project with all wizard data
       const project = await createProject({
         name: data.name,
-        description: enhancedDescription,
+        description: data.description,
+        mission: data.mission,
+        goals: goalsArray,
+        inScope: inScopeArray,
+        outOfScope: outOfScopeArray,
+        constraints: constraintsArray
       });
+      
+      // Save project ID and info for AI suggestions if requested
+      if (data.generateAiSuggestions) {
+        setNewProjectId(project.id);
+        setProjectInfo({
+          mission: data.mission,
+          goals: goalsArray,
+          inScope: inScopeArray,
+          outOfScope: outOfScopeArray
+        });
+      }
       
       // Invalidate queries to refresh
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
@@ -172,11 +198,16 @@ ${data.constraints ? `- Constraints: ${data.constraints}` : ''}
         description: "New project has been created with defined scope and goals.",
       });
       
-      // Navigate to the new project
-      navigate(`/projects/${project.id}`);
-      
-      // Close dialog and reset form
+      // Close the wizard dialog
       handleOpenChange(false);
+      
+      // Show AI suggestions dialog if the user opted for it
+      if (data.generateAiSuggestions) {
+        setShowSuggestionsDialog(true);
+      } else {
+        // Navigate to the new project
+        navigate(`/projects/${project.id}`);
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -185,6 +216,14 @@ ${data.constraints ? `- Constraints: ${data.constraints}` : ''}
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+  
+  // Handle closing the AI suggestions dialog
+  const handleCloseSuggestionsDialog = () => {
+    setShowSuggestionsDialog(false);
+    if (newProjectId) {
+      navigate(`/projects/${newProjectId}`);
     }
   };
 
@@ -310,7 +349,7 @@ ${data.constraints ? `- Constraints: ${data.constraints}` : ''}
                   <FormItem>
                     <FormLabel>In Scope <span className="text-red-500">*</span></FormLabel>
                     <FormDescription>
-                      Define what is included in this project's scope.
+                      Define what is included in this project's scope. Add one item per line.
                     </FormDescription>
                     <FormControl>
                       <Textarea 
@@ -331,7 +370,7 @@ ${data.constraints ? `- Constraints: ${data.constraints}` : ''}
                   <FormItem>
                     <FormLabel>Out of Scope <span className="text-red-500">*</span></FormLabel>
                     <FormDescription>
-                      Define what is explicitly excluded from this project.
+                      Define what is explicitly excluded from this project. Add one item per line.
                     </FormDescription>
                     <FormControl>
                       <Textarea 
@@ -352,7 +391,7 @@ ${data.constraints ? `- Constraints: ${data.constraints}` : ''}
                   <FormItem>
                     <FormLabel>Constraints</FormLabel>
                     <FormDescription>
-                      List any limitations or constraints (time, budget, technical, etc.).
+                      List any limitations or constraints (time, budget, technical, etc.). One per line.
                     </FormDescription>
                     <FormControl>
                       <Textarea 
@@ -369,109 +408,226 @@ ${data.constraints ? `- Constraints: ${data.constraints}` : ''}
           </>
         );
       
+      case 4:
+        return (
+          <>
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-6 border border-blue-100 dark:border-blue-900">
+                <div className="flex items-start space-x-4">
+                  <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-2 flex-shrink-0">
+                    <Sparkles className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="font-medium text-blue-700 dark:text-blue-300">AI Feature Suggestions</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      Based on your project details, our AI can suggest potential features to jumpstart your project planning.
+                    </p>
+                    <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-300">
+                      <li className="flex items-center">
+                        <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                        <span>Generate feature ideas from multiple perspectives (Technical, Security, Business, UX)</span>
+                      </li>
+                      <li className="flex items-center">
+                        <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                        <span>Get suggested feature priorities based on your project scope</span>
+                      </li>
+                      <li className="flex items-center">
+                        <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                        <span>Review and customize before adding to your project</span>
+                      </li>
+                    </ul>
+                    
+                    <FormField
+                      control={form.control}
+                      name="generateAiSuggestions"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between space-x-3 space-y-0 mt-4 rounded-md border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Generate AI feature suggestions</FormLabel>
+                            <FormDescription>
+                              Automatically suggest features after project creation
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <UISwitch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="bg-amber-50 dark:bg-amber-900/20 rounded-md p-3 mt-2">
+                      <div className="flex items-center">
+                        <AlertTriangle className="h-4 w-4 text-amber-500 mr-2" />
+                        <span className="text-xs text-amber-800 dark:text-amber-300">
+                          AI feature suggestions require an OpenAI API key
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-6">
+                <h3 className="font-medium mb-4">Project Summary</h3>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <span className="font-medium">Project Name: </span>
+                    <span>{form.getValues("name")}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Mission: </span>
+                    <span className="text-gray-600 dark:text-gray-400">{form.getValues("mission")}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Primary Goal: </span>
+                    <span className="text-gray-600 dark:text-gray-400">{form.getValues("primaryGoal")}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">In Scope: </span>
+                    <div className="mt-1 pl-2 space-y-1 text-gray-600 dark:text-gray-400">
+                      {form.getValues("inScope").split("\n").filter(Boolean).map((item, i) => (
+                        <div key={i} className="flex items-baseline">
+                          <span className="mr-2">•</span>
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="font-medium">Out of Scope: </span>
+                    <div className="mt-1 pl-2 space-y-1 text-gray-600 dark:text-gray-400">
+                      {form.getValues("outOfScope").split("\n").filter(Boolean).map((item, i) => (
+                        <div key={i} className="flex items-baseline">
+                          <span className="mr-2">•</span>
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      
       default:
         return null;
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[700px]">
-        <DialogHeader>
-          <DialogTitle>Project Initiation Wizard</DialogTitle>
-          <DialogDescription>
-            Let's define the scope and goals of your new project.
-          </DialogDescription>
-        </DialogHeader>
-        
-        {/* Progress steps */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            {stepTitles.map((title, index) => (
-              <div 
-                key={index} 
-                className={`flex-1 text-center ${index < stepTitles.length - 1 ? 'border-b-2 border-gray-200 dark:border-gray-700 pb-2 relative' : 'pb-2'}`}
-              >
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Project Initiation Wizard</DialogTitle>
+            <DialogDescription>
+              Let's define the scope and goals of your new project.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Progress steps */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              {stepTitles.map((title, index) => (
                 <div 
-                  className={`
-                    inline-flex items-center justify-center w-8 h-8 rounded-full 
-                    ${step > index + 1 
-                      ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300' 
-                      : step === index + 1 
-                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' 
-                        : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'
-                    }
-                    mb-1
-                  `}
+                  key={index} 
+                  className={`flex-1 text-center ${index < stepTitles.length - 1 ? 'border-b-2 border-gray-200 dark:border-gray-700 pb-2 relative' : 'pb-2'}`}
                 >
-                  {step > index + 1 ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    index + 1
+                  <div 
+                    className={`
+                      inline-flex items-center justify-center w-8 h-8 rounded-full 
+                      ${step > index + 1 
+                        ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300' 
+                        : step === index + 1 
+                          ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' 
+                          : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'
+                      }
+                      mb-1
+                    `}
+                  >
+                    {step > index + 1 ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      index + 1
+                    )}
+                  </div>
+                  <div className={`
+                    text-xs 
+                    ${step === index + 1 
+                      ? 'font-medium text-blue-600 dark:text-blue-300' 
+                      : step > index + 1 
+                        ? 'font-medium text-green-600 dark:text-green-300' 
+                        : 'text-gray-500 dark:text-gray-400'
+                    }
+                  `}>
+                    {title}
+                  </div>
+                  {index < stepTitles.length - 1 && (
+                    <div className={`absolute h-0.5 w-full top-4 left-1/2 ${
+                      step > index + 1 ? 'bg-green-100 dark:bg-green-900' : 'bg-gray-100 dark:bg-gray-800'
+                    }`}></div>
                   )}
                 </div>
-                <div className={`
-                  text-xs 
-                  ${step === index + 1 
-                    ? 'font-medium text-blue-600 dark:text-blue-300' 
-                    : step > index + 1 
-                      ? 'font-medium text-green-600 dark:text-green-300' 
-                      : 'text-gray-500 dark:text-gray-400'
-                  }
-                `}>
-                  {title}
-                </div>
-                {index < stepTitles.length - 1 && (
-                  <div className={`absolute h-0.5 w-full top-4 left-1/2 ${
-                    step > index + 1 ? 'bg-green-100 dark:bg-green-900' : 'bg-gray-100 dark:bg-gray-800'
-                  }`}></div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {renderStepContent()}
-            
-            <DialogFooter className="flex justify-between mt-6">
-              <div>
-                {step > 1 && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handlePrevious}
-                    disabled={isSubmitting}
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
-                  </Button>
-                )}
-              </div>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {renderStepContent()}
               
-              <div>
-                {step < totalSteps ? (
-                  <Button 
-                    type="button"
-                    onClick={handleNext}
-                  >
-                    Next
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button 
-                    type="submit"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Creating..." : "Create Project"}
-                  </Button>
-                )}
-              </div>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+              <DialogFooter className="flex justify-between mt-6">
+                <div>
+                  {step > 1 && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handlePrevious}
+                      disabled={isSubmitting}
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+                  )}
+                </div>
+                
+                <div>
+                  {step < totalSteps ? (
+                    <Button 
+                      type="button"
+                      onClick={handleNext}
+                    >
+                      Next
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button 
+                      type="submit"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Creating..." : "Create Project"}
+                    </Button>
+                  )}
+                </div>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* AI Feature Suggestion Dialog */}
+      {showSuggestionsDialog && newProjectId && (
+        <AiFeatureSuggestionDialog
+          open={showSuggestionsDialog}
+          onOpenChange={handleCloseSuggestionsDialog}
+          projectId={newProjectId}
+          projectInfo={projectInfo}
+        />
+      )}
+    </>
   );
 }
