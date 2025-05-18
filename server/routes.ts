@@ -40,6 +40,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch project" });
     }
   });
+  
+  app.get("/api/projects/:parentId/branches", async (req: Request, res: Response) => {
+    try {
+      const parentId = parseInt(req.params.parentId);
+      const parentProject = await storage.getProject(parentId);
+      
+      if (!parentProject) {
+        return res.status(404).json({ message: "Parent project not found" });
+      }
+      
+      const childProjects = await storage.getChildProjects(parentId);
+      res.json(childProjects);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch branch projects" });
+    }
+  });
 
   app.post("/api/projects", async (req: Request, res: Response) => {
     try {

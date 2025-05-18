@@ -79,3 +79,19 @@ export async function acceptSuggestion(id: number) {
 export async function deleteSuggestion(id: number) {
   await apiRequest("DELETE", `/api/ai/suggestions/${id}`);
 }
+
+// Branching API
+export async function analyzeBranching(projectId: number, newFeatureIds: number[]) {
+  const res = await apiRequest("POST", `/api/projects/${projectId}/ai/analyze-branching`, { newFeatureIds });
+  return res.json();
+}
+
+export async function branchProject(parentId: number, data: { name: string, description?: string }) {
+  const res = await apiRequest("POST", `/api/projects/${parentId}/branch`, data);
+  return res.json();
+}
+
+export async function getChildProjects(parentId: number) {
+  const res = await apiRequest("GET", `/api/projects/${parentId}/branches`);
+  return res.json();
+}

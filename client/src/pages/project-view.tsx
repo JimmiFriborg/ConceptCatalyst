@@ -6,13 +6,16 @@ import { FeatureCard } from "@/components/feature-card";
 import { CategoryZones } from "@/components/category-zones";
 import { AiSuggestionsPanel } from "@/components/ai-suggestions-panel";
 import { AddFeatureDialog } from "@/components/add-feature-dialog";
+import { BranchRecommendationDialog } from "@/components/branch-recommendation-dialog";
+import { BranchProjectsSection } from "@/components/branch-projects-section";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Menu, PlusCircle, Download, ArrowLeft, ArrowRight } from "lucide-react";
+import { Menu, PlusCircle, Download, ArrowLeft, ArrowRight, GitBranch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Feature } from "@shared/schema";
 import { useIsMobile as useMobile } from "@/hooks/use-mobile";
+import { analyzeBranching } from "@/lib/api";
 
 interface ProjectViewProps {
   id: number;
