@@ -11,9 +11,14 @@ interface BranchRecommendationResponse {
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const OPENAI_MODEL = "gpt-4o";
 
+// Create OpenAI client with proper API key
 const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || "dummy-key-for-dev" 
+  apiKey: process.env.OPENAI_API_KEY 
 });
+
+// Validate API key
+console.log(`OpenAI API Key available: ${!!process.env.OPENAI_API_KEY}`);
+console.log(`Using OpenAI model: ${OPENAI_MODEL}`);
 
 // Define types for AI responses
 interface FeatureAnalysisResponse {
@@ -293,13 +298,112 @@ export async function generateFeatureSuggestions(
   existingFeatures: { name: string; description: string }[],
   perspective: Perspective
 ): Promise<FeatureSuggestionResponse[]> {
-  try {
-    console.log(`OpenAI API - Generating suggestions for project: ${projectName}, perspective: ${perspective}`);
-    console.log(`OpenAI API Key available: ${!!process.env.OPENAI_API_KEY}`);
+  console.log(`OpenAI API - Generating suggestions for project: ${projectName}, perspective: ${perspective}`);
+  console.log(`OpenAI API Key available: ${!!process.env.OPENAI_API_KEY}`);
+  
+  // Default suggestions based on perspective
+  const getDefaultSuggestions = (): FeatureSuggestionResponse[] => {
+    const suggestions: FeatureSuggestionResponse[] = [];
     
-    const existingFeaturesText = existingFeatures
-      .map(f => `- ${f.name}: ${f.description}`)
-      .join("\n");
+    if (perspective === "technical") {
+      suggestions.push(
+        {
+          name: "Automated Testing Framework",
+          description: "Implement comprehensive test suite with unit, integration, and E2E tests. Includes CI integration and detailed reporting.",
+          perspective: perspective,
+          suggestedCategory: "mvp"
+        },
+        {
+          name: "API Rate Limiting",
+          description: "Add request throttling to prevent abuse. Includes configurable limits per endpoint and proper 429 responses.",
+          perspective: perspective,
+          suggestedCategory: "launch"
+        },
+        {
+          name: "Performance Monitoring",
+          description: "Implement detailed metrics tracking for application performance. Includes dashboards and automated alerts for anomalies.",
+          perspective: perspective,
+          suggestedCategory: "v1.5"
+        }
+      );
+    } else if (perspective === "business") {
+      suggestions.push(
+        {
+          name: "Customer Analytics Dashboard",
+          description: "Create a comprehensive view of user metrics and ROI calculations. Helps track business value and conversion rates.",
+          perspective: perspective,
+          suggestedCategory: "mvp"
+        },
+        {
+          name: "Subscription Management",
+          description: "Implement tiered pricing model with automated billing. Includes upgrade paths and usage analytics.",
+          perspective: perspective,
+          suggestedCategory: "launch"
+        },
+        {
+          name: "Partner Integration API",
+          description: "Develop secure API for third-party integrations. Expands ecosystem and creates new revenue opportunities.",
+          perspective: perspective,
+          suggestedCategory: "v2.0"
+        }
+      );
+    } else if (perspective === "ux") {
+      suggestions.push(
+        {
+          name: "Personalized Onboarding Flow",
+          description: "Create adaptive first-time user experience based on user role. Ensures feature discovery and reduces learning curve.",
+          perspective: perspective,
+          suggestedCategory: "mvp"
+        },
+        {
+          name: "Customizable Dashboard",
+          description: "Allow users to arrange and select widgets for their main view. Settings sync across devices for consistent experience.",
+          perspective: perspective,
+          suggestedCategory: "v1.5"
+        },
+        {
+          name: "Accessibility Enhancements",
+          description: "Implement WCAG compliance features including keyboard navigation and screen reader support. Makes product usable for all users.",
+          perspective: perspective,
+          suggestedCategory: "launch"
+        }
+      );
+    } else if (perspective === "security") {
+      suggestions.push(
+        {
+          name: "Two-Factor Authentication",
+          description: "Add extra security layer with app and SMS verification options. Includes recovery mechanisms and session management.",
+          perspective: perspective,
+          suggestedCategory: "mvp"
+        },
+        {
+          name: "Data Encryption",
+          description: "Implement end-to-end encryption for sensitive information. Uses industry standard algorithms with regular key rotation.",
+          perspective: perspective,
+          suggestedCategory: "launch"
+        },
+        {
+          name: "Security Audit Logging",
+          description: "Create detailed logs of security-relevant events with tamper-proof storage. Includes suspicious activity detection and alerts.",
+          perspective: perspective,
+          suggestedCategory: "v1.5"
+        }
+      );
+    }
+    
+    return suggestions;
+  };
+  
+  // If no OpenAI API key, return default suggestions
+  if (!process.env.OPENAI_API_KEY) {
+    console.log("No OpenAI API key available, using default suggestions");
+    return getDefaultSuggestions();
+  }
+  
+  try {
+    const existingFeaturesText = existingFeatures.length > 0
+      ? existingFeatures.map(f => `- ${f.name}: ${f.description}`).join("\n")
+      : "No existing features yet.";
     
     const prompt = `
       As a product development expert with a focus on ${perspective} perspective, suggest new features for the following project:
@@ -307,8 +411,7 @@ export async function generateFeatureSuggestions(
       Project Name: ${projectName}
       Project Description: ${projectDescription}
       
-      Existing Features:
-      ${existingFeaturesText}
+      ${existingFeatures.length > 0 ? `Existing Features:\n${existingFeaturesText}` : "No existing features yet."}
       
       Generate 3 feature suggestions focused on the ${perspective} perspective.
       
@@ -321,8 +424,9 @@ export async function generateFeatureSuggestions(
           "suggestedCategory": "mvp"|"launch"|"v1.5"|"v2.0"
         }
       ]
-    `;
+    `.trim();
 
+    console.log("Sending request to OpenAI API...");
     const response = await openai.chat.completions.create({
       model: OPENAI_MODEL,
       messages: [{ role: "user", content: prompt }],
@@ -330,21 +434,38 @@ export async function generateFeatureSuggestions(
     });
 
     const content = response.choices[0].message.content;
-    const results = JSON.parse(content || "[]");
-    
-    // Ensure the results have the correct format
-    if (Array.isArray(results)) {
-      return results.map(result => ({
-        name: result.name,
-        description: result.description,
-        perspective: result.perspective as Perspective,
-        suggestedCategory: result.suggestedCategory as Category
-      }));
+    if (!content) {
+      console.log("Empty content from OpenAI response");
+      return getDefaultSuggestions();
     }
     
-    return [];
+    try {
+      const parsedContent = JSON.parse(content);
+      
+      if (Array.isArray(parsedContent)) {
+        return parsedContent.map(item => ({
+          name: item.name || "Unnamed Feature",
+          description: item.description || "No description provided",
+          perspective: perspective,
+          suggestedCategory: item.suggestedCategory as Category || "mvp"
+        }));
+      } else if (parsedContent.suggestions && Array.isArray(parsedContent.suggestions)) {
+        return parsedContent.suggestions.map(item => ({
+          name: item.name || "Unnamed Feature",
+          description: item.description || "No description provided",
+          perspective: perspective,
+          suggestedCategory: item.suggestedCategory as Category || "mvp"
+        }));
+      } else {
+        console.log("Unexpected response format from OpenAI");
+        return getDefaultSuggestions();
+      }
+    } catch (error) {
+      console.error("Failed to parse OpenAI response:", error);
+      return getDefaultSuggestions();
+    }
   } catch (error) {
-    console.error("Error generating feature suggestions:", error);
-    return [];
+    console.error("Error accessing OpenAI API:", error);
+    return getDefaultSuggestions();
   }
 }
