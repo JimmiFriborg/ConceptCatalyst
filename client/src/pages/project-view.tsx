@@ -9,9 +9,10 @@ import { AddFeatureDialog } from "@/components/add-feature-dialog";
 import { BranchRecommendationDialog } from "@/components/branch-recommendation-dialog";
 import { BranchProjectsSection } from "@/components/branch-projects-section";
 import { DriftDetectionAlert } from "@/components/drift-detection-alert";
+import { PriorityVisualization } from "@/components/priority-visualization";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Menu, PlusCircle, Download, ArrowLeft, ArrowRight, GitBranch } from "lucide-react";
+import { Menu, PlusCircle, Download, ArrowLeft, ArrowRight, GitBranch, BarChart2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Feature } from "@shared/schema";
@@ -27,6 +28,7 @@ export default function ProjectView({ id }: ProjectViewProps) {
   const isMobile = useMobile();
   const [isAddFeatureOpen, setIsAddFeatureOpen] = useState(false);
   const [isBranchDialogOpen, setIsBranchDialogOpen] = useState(false);
+  const [showVisualization, setShowVisualization] = useState(false);
   
   const { 
     setCurrentProjectId,
@@ -166,6 +168,13 @@ export default function ProjectView({ id }: ProjectViewProps) {
           </div>
           
           <div className="flex items-center space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowVisualization(!showVisualization)}
+            >
+              <BarChart2 className="mr-2 h-4 w-4" />
+              {showVisualization ? "Hide Visualization" : "Show Visualization"}
+            </Button>
             <Button 
               variant="outline" 
               onClick={handleExport}
