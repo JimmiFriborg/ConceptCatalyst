@@ -1,6 +1,13 @@
 import OpenAI from "openai";
 import { type Perspective, type Category } from "@shared/schema";
 
+// Interface for the branch recommendation response
+interface BranchRecommendationResponse {
+  shouldBranch: boolean;
+  reason: string;
+  suggestedName?: string;
+}
+
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const OPENAI_MODEL = "gpt-4o";
 
@@ -114,6 +121,67 @@ export async function enhanceFeatureDescription(
 }
 
 // Generate feature suggestions based on project context
+// Analyze a set of features to detect if they're drifting from project scope and recommend branching
+export async function analyzeForBranching(
+  projectName: string,
+  projectDescription: string,
+  newFeatures: { name: string; description: string }[],
+  existingFeatures: { name: string; description: string }[]
+): Promise<BranchRecommendationResponse> {
+  try {
+    const newFeaturesText = newFeatures
+      .map(f => `- ${f.name}: ${f.description}`)
+      .join("\n");
+    
+    const existingFeaturesText = existingFeatures
+      .map(f => `- ${f.name}: ${f.description}`)
+      .join("\n");
+    
+    const prompt = `
+      As a product management expert, analyze whether the following new features are drifting from the original project scope:
+      
+      Project Name: ${projectName}
+      Project Description: ${projectDescription}
+      
+      Existing Features:
+      ${existingFeaturesText}
+      
+      New Features:
+      ${newFeaturesText}
+      
+      Analyze if these new features represent a significant direction change or scope change that would warrant creating a new project branch.
+      
+      Return your analysis in JSON format:
+      {
+        "shouldBranch": true/false,
+        "reason": "Your explanation of why these features should or should not be branched",
+        "suggestedName": "Suggested name for new branch project (if branching is recommended)"
+      }
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content;
+    const result = JSON.parse(content || "{}") as BranchRecommendationResponse;
+    
+    return {
+      shouldBranch: result.shouldBranch,
+      reason: result.reason,
+      suggestedName: result.suggestedName
+    };
+  } catch (error) {
+    console.error("Error analyzing for branching:", error);
+    return {
+      shouldBranch: false,
+      reason: "Unable to analyze features with AI. Please review manually."
+    };
+  }
+}
+
 export async function generateFeatureSuggestions(
   projectName: string,
   projectDescription: string,

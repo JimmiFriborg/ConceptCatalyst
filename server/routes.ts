@@ -10,7 +10,8 @@ import {
 import { 
   analyzeFeature, 
   enhanceFeatureDescription, 
-  generateFeatureSuggestions 
+  generateFeatureSuggestions,
+  analyzeForBranching
 } from "./openai";
 import { z } from "zod";
 
@@ -303,6 +304,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(enhancement);
     } catch (error) {
       res.status(500).json({ message: "Failed to enhance description" });
+    }
+  });
+  
+  app.post("/api/projects/:projectId/ai/analyze-branching", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      const schema = z.object({
+        newFeatureIds: z.array(z.number()).min(1)
+      });
+      
+      const validateResult = schema.safeParse(req.body);
+      
+      if (!validateResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid data", 
+          errors: validateResult.error.format() 
+        });
+      }
+      
+      // Get all features from the project
+      const allFeatures = await storage.getFeatures(projectId);
+      
+      // Split features into new and existing based on the provided IDs
+      const { newFeatureIds } = validateResult.data;
+      const newFeatures = allFeatures.filter(f => newFeatureIds.includes(f.id));
+      const existingFeatures = allFeatures.filter(f => !newFeatureIds.includes(f.id));
+      
+      // If no existing features to compare against, can't determine branching
+      if (existingFeatures.length === 0) {
+        return res.json({
+          shouldBranch: false,
+          reason: "Not enough existing features to analyze for branching"
+        });
+      }
+      
+      // Convert features to the format required by the AI function
+      const newFeatureData = newFeatures.map(f => ({
+        name: f.name,
+        description: f.description || ""
+      }));
+      
+      const existingFeatureData = existingFeatures.map(f => ({
+        name: f.name,
+        description: f.description || ""
+      }));
+      
+      // Call the AI to analyze if branching is recommended
+      const branchRecommendation = await analyzeForBranching(
+        project.name,
+        project.description || "",
+        newFeatureData,
+        existingFeatureData
+      );
+      
+      res.json(branchRecommendation);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to analyze for branching" });
     }
   });
 
