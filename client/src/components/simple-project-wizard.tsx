@@ -386,7 +386,7 @@ export function SimpleProjectWizard({ open, onOpenChange }: WizardProps) {
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] h-auto max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Project Wizard</DialogTitle>
             <DialogDescription>Create a new project (Step {step} of 4)</DialogDescription>

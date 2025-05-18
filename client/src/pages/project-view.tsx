@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useProject, useProjectDetails, useProjectFeatures, useProjectSuggestions } from "@/context/project-context";
 import { ProjectSidebar } from "@/components/project-sidebar";
 import { FeatureCard } from "@/components/feature-card";
-import { CategoryZones } from "@/components/category-zones";
+import { EnhancedCategoryZones } from "@/components/enhanced-category-zones";
 import { AiSuggestionsPanel } from "@/components/ai-suggestions-panel";
 import { AddFeatureDialog } from "@/components/add-feature-dialog";
 import { BranchRecommendationDialog } from "@/components/branch-recommendation-dialog";
