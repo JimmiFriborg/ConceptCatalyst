@@ -8,6 +8,7 @@ import { AiSuggestionsPanel } from "@/components/ai-suggestions-panel";
 import { AddFeatureDialog } from "@/components/add-feature-dialog";
 import { BranchRecommendationDialog } from "@/components/branch-recommendation-dialog";
 import { BranchProjectsSection } from "@/components/branch-projects-section";
+import { DriftDetectionAlert } from "@/components/drift-detection-alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Menu, PlusCircle, Download, ArrowLeft, ArrowRight, GitBranch } from "lucide-react";
@@ -26,12 +27,6 @@ export default function ProjectView({ id }: ProjectViewProps) {
   const isMobile = useMobile();
   const [isAddFeatureOpen, setIsAddFeatureOpen] = useState(false);
   const [isBranchDialogOpen, setIsBranchDialogOpen] = useState(false);
-  const [branchRecommendation, setBranchRecommendation] = useState<{
-    shouldBranch: boolean;
-    reason: string;
-    suggestedName?: string;
-  } | null>(null);
-  const [isAnalyzingBranch, setIsAnalyzingBranch] = useState(false);
   
   const { 
     setCurrentProjectId,
@@ -90,35 +85,7 @@ export default function ProjectView({ id }: ProjectViewProps) {
     }
   };
 
-  // Analyze features for branching
-  const handleAnalyzeBranching = async () => {
-    if (!features || features.length < 3) {
-      return; // Need enough features to analyze
-    }
-    
-    try {
-      setIsAnalyzingBranch(true);
-      
-      // Get the last 3 added features to check if they're drifting from the project scope
-      const recentFeatureIds = [...features]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 3)
-        .map(f => f.id);
-      
-      // Call API to analyze if these features suggest branching
-      const result = await analyzeBranching(id, recentFeatureIds);
-      setBranchRecommendation(result);
-      
-      // If the recommendation is to branch, show the dialog
-      if (result.shouldBranch) {
-        setIsBranchDialogOpen(true);
-      }
-    } catch (error) {
-      console.error("Error analyzing for branching:", error);
-    } finally {
-      setIsAnalyzingBranch(false);
-    }
-  };
+  // Removed manual branch analysis since we now use autonomous detection
 
   // Export project data
   const handleExport = () => {
@@ -199,14 +166,6 @@ export default function ProjectView({ id }: ProjectViewProps) {
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button 
-              variant="outline" 
-              onClick={handleAnalyzeBranching}
-              disabled={isAnalyzingBranch || !features || features.length < 3}
-            >
-              <GitBranch className="mr-2 h-4 w-4" />
-              {isAnalyzingBranch ? "Analyzing..." : "Analyze Branch"}
-            </Button>
             <Button 
               variant="outline" 
               onClick={handleExport}
@@ -291,6 +250,13 @@ export default function ProjectView({ id }: ProjectViewProps) {
             </div>
           </div>
           
+          {/* Autonomous Drift Detection Alert */}
+          {features && features.length >= 3 && (
+            <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+              <DriftDetectionAlert projectId={id} features={features} />
+            </div>
+          )}
+          
           {/* Category Zones */}
           <CategoryZones />
         </div>
@@ -316,13 +282,7 @@ export default function ProjectView({ id }: ProjectViewProps) {
         onOpenChange={setIsAddFeatureOpen}
       />
       
-      {/* Branch Recommendation Dialog */}
-      <BranchRecommendationDialog
-        open={isBranchDialogOpen}
-        onOpenChange={setIsBranchDialogOpen}
-        parentProjectId={id}
-        branchRecommendation={branchRecommendation}
-      />
+      {/* We no longer need the branch recommendation dialog here as it's handled by the DriftDetectionAlert component */}
     </div>
   );
 }
