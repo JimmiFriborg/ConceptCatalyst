@@ -49,8 +49,6 @@ export const insertProjectSchema = createInsertSchema(projects).pick({
   name: true,
   description: true,
   parentId: true,
-  isBranch: true,
-  branchReason: true,
 });
 
 export type InsertProject = z.infer<typeof insertProjectSchema>;

@@ -99,6 +99,24 @@ export class MemStorage implements IStorage {
     this.projects.set(id, project);
     return project;
   }
+  
+  async branchProject(parentId: number, insertProject: InsertProject): Promise<Project> {
+    const parent = await this.getProject(parentId);
+    if (!parent) {
+      throw new Error("Parent project not found");
+    }
+    
+    const id = this.projectCurrentId++;
+    const project: Project = { 
+      ...insertProject, 
+      id, 
+      parentId,
+      description: insertProject.description || null,
+      createdAt: new Date() 
+    };
+    this.projects.set(id, project);
+    return project;
+  }
 
   async updateProject(id: number, projectData: Partial<InsertProject>): Promise<Project | undefined> {
     const project = this.projects.get(id);

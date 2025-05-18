@@ -57,6 +57,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create project" });
     }
   });
+  
+  app.post("/api/projects/:parentId/branch", async (req: Request, res: Response) => {
+    try {
+      const parentId = parseInt(req.params.parentId);
+      
+      if (isNaN(parentId)) {
+        return res.status(400).json({ message: "Invalid parent project ID" });
+      }
+      
+      const validateResult = insertProjectSchema.safeParse(req.body);
+      
+      if (!validateResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid project data", 
+          errors: validateResult.error.format() 
+        });
+      }
+      
+      const project = await storage.branchProject(parentId, validateResult.data);
+      res.status(201).json(project);
+    } catch (error) {
+      if (error.message === "Parent project not found") {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to create branch project" });
+    }
+  });
 
   app.put("/api/projects/:id", async (req: Request, res: Response) => {
     try {
