@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddProjectDialog } from "@/components/add-project-dialog";
+import { ProjectWizard } from "@/components/project-wizard";
 import { PlusCircle, FolderOpen, Folder, Clock, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -175,7 +176,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      <AddProjectDialog
+      <ProjectWizard
         open={isAddProjectOpen}
         onOpenChange={setIsAddProjectOpen}
       />
