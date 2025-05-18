@@ -323,6 +323,13 @@ export default function ProjectView({ id }: ProjectViewProps) {
         onOpenChange={setIsAddFeatureOpen}
       />
       
+      {/* Frankenstein Feature Dialog */}
+      <FrankensteinFeatureDialog
+        open={isFrankensteinOpen}
+        onOpenChange={setIsFrankensteinOpen}
+        projectId={id}
+      />
+      
       {/* We no longer need the branch recommendation dialog here as it's handled by the DriftDetectionAlert component */}
     </div>
   );
