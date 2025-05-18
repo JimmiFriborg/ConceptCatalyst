@@ -298,6 +298,12 @@ export default function ProjectView({ id }: ProjectViewProps) {
           </div>
           
           {/* Enhanced Category Zones with custom category support */}
+          <div className="mb-4 flex justify-end">
+            <Button onClick={() => setIsAddFeatureOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Feature
+            </Button>
+          </div>
           <EnhancedCategoryZones />
         </div>
       </div>

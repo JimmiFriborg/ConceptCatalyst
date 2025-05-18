@@ -82,7 +82,13 @@ export class MemStorage implements IStorage {
       if (global.persistedAppData === undefined) {
         global.persistedAppData = {};
       }
-      global.persistedAppData.memStorage = dataToSave;
+      
+      // Deep clone the data to ensure we don't have reference issues
+      const clonedData = JSON.parse(JSON.stringify(dataToSave));
+      global.persistedAppData.memStorage = clonedData;
+      
+      // We'll only use the in-memory global variable for persistence
+      // File system persistence caused issues
       
       console.log(`Data persisted: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
     } catch (error) {
@@ -90,32 +96,57 @@ export class MemStorage implements IStorage {
     }
   }
   
-  // Load data from localStorage
+  // Load data from persistence
   private loadPersistedData(): void {
     try {
-      // Check if we have persisted data
+      // First try to load from global memory
       if (global.persistedAppData && global.persistedAppData.memStorage) {
         const data = global.persistedAppData.memStorage;
-        
-        // Restore maps
-        this.users = new Map(data.users);
-        this.projects = new Map(data.projects);
-        this.features = new Map(data.features);
-        this.aiSuggestions = new Map(data.aiSuggestions);
-        
-        // Restore IDs
-        this.userCurrentId = data.userCurrentId;
-        this.projectCurrentId = data.projectCurrentId;
-        this.featureCurrentId = data.featureCurrentId;
-        this.suggestionCurrentId = data.suggestionCurrentId;
-        
-        console.log(`Data loaded: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
-      } else {
-        console.log('No persisted data found, starting with empty storage');
+        this.loadDataFromObject(data);
+        console.log(`Data loaded from memory: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
+        return;
       }
+      
+      // If not in memory, try to load from backup file
+      try {
+        const fs = require('fs');
+        if (fs.existsSync('./data-backup.json')) {
+          const fileData = fs.readFileSync('./data-backup.json', 'utf8');
+          const data = JSON.parse(fileData);
+          this.loadDataFromObject(data);
+          
+          // Also restore to global for future use
+          if (global.persistedAppData === undefined) {
+            global.persistedAppData = {};
+          }
+          global.persistedAppData.memStorage = data;
+          
+          console.log(`Data loaded from backup file: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
+          return;
+        }
+      } catch (fileError) {
+        console.error('Failed to load from backup file:', fileError);
+      }
+      
+      console.log('No persisted data found, starting with empty storage');
     } catch (error) {
       console.error('Failed to load persisted data:', error);
     }
+  }
+  
+  // Helper method to populate data structures from loaded data
+  private loadDataFromObject(data: any): void {
+    // Restore maps
+    this.users = new Map(data.users);
+    this.projects = new Map(data.projects);
+    this.features = new Map(data.features);
+    this.aiSuggestions = new Map(data.aiSuggestions);
+    
+    // Restore IDs
+    this.userCurrentId = data.userCurrentId;
+    this.projectCurrentId = data.projectCurrentId;
+    this.featureCurrentId = data.featureCurrentId;
+    this.suggestionCurrentId = data.suggestionCurrentId;
   }
   
   async getChildProjects(parentId: number): Promise<Project[]> {
