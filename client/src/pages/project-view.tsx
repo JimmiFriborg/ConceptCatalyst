@@ -259,6 +259,13 @@ export default function ProjectView({ id }: ProjectViewProps) {
             </div>
           </div>
           
+          {/* Priority Visualization - toggled by button click */}
+          {showVisualization && features && features.length > 0 && (
+            <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+              <PriorityVisualization features={features} />
+            </div>
+          )}
+          
           {/* Autonomous Drift Detection Alert */}
           {features && features.length >= 3 && (
             <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
