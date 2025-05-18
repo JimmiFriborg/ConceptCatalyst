@@ -99,33 +99,12 @@ export class MemStorage implements IStorage {
   // Load data from persistence
   private loadPersistedData(): void {
     try {
-      // First try to load from global memory
+      // Try to load from global memory
       if (global.persistedAppData && global.persistedAppData.memStorage) {
         const data = global.persistedAppData.memStorage;
         this.loadDataFromObject(data);
-        console.log(`Data loaded from memory: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
+        console.log(`Data loaded: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
         return;
-      }
-      
-      // If not in memory, try to load from backup file
-      try {
-        const fs = require('fs');
-        if (fs.existsSync('./data-backup.json')) {
-          const fileData = fs.readFileSync('./data-backup.json', 'utf8');
-          const data = JSON.parse(fileData);
-          this.loadDataFromObject(data);
-          
-          // Also restore to global for future use
-          if (global.persistedAppData === undefined) {
-            global.persistedAppData = {};
-          }
-          global.persistedAppData.memStorage = data;
-          
-          console.log(`Data loaded from backup file: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
-          return;
-        }
-      } catch (fileError) {
-        console.error('Failed to load from backup file:', fileError);
       }
       
       console.log('No persisted data found, starting with empty storage');

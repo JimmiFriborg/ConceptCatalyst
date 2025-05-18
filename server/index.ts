@@ -1,6 +1,15 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import fs from "node:fs";
+import path from "node:path";
+
+// Create a global variable to ensure data persists between server restarts
+declare global {
+  var persistedAppData: {
+    memStorage?: any;
+  };
+}
 
 const app = express();
 app.use(express.json());
