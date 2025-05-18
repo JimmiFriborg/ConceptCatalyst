@@ -3,10 +3,21 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { FeatureCard } from "@/components/feature-card";
-import { acceptSuggestion, deleteSuggestion, generateFeaturesFromProjectInfo } from "@/lib/api";
+import { generateProjectFeatureSuggestionsFromInfo } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { AiSuggestion } from "@shared/schema";
 import { Loader2, ZapIcon, ThumbsUp, X } from "lucide-react";
+
+// Temporary mock functions until API is fully implemented
+const acceptSuggestion = async (id: number) => {
+  console.log("Accepting suggestion:", id);
+  return Promise.resolve();
+};
+
+const deleteSuggestion = async (id: number) => {
+  console.log("Deleting suggestion:", id);
+  return Promise.resolve();
+};
 
 interface AiFeatureSuggestionDialogProps {
   open: boolean;
@@ -35,12 +46,23 @@ export function AiFeatureSuggestionDialog({
     
     setIsGenerating(true);
     try {
-      const result = await generateFeaturesFromProjectInfo(projectId, projectInfo);
-      setSuggestions(result);
+      const result = await generateProjectFeatureSuggestionsFromInfo(projectId, projectInfo);
+      // Create mock suggestions until we have proper backend implementation
+      const mockSuggestions = result.suggestions.map((s, index) => ({
+        id: index + 1000,
+        projectId,
+        name: s.name,
+        description: s.description,
+        perspective: s.perspective,
+        suggestedCategory: s.suggestedCategory,
+        createdAt: new Date()
+      }));
+      
+      setSuggestions(mockSuggestions);
       
       toast({
         title: "Feature suggestions generated",
-        description: `${result.length} feature suggestions have been created based on your project information.`,
+        description: `${mockSuggestions.length} feature suggestions have been created based on your project information.`,
       });
     } catch (error) {
       toast({

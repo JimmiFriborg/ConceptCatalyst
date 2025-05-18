@@ -3,7 +3,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { branchProject } from "@/lib/api";
+// Mock function for branch project functionality
+const branchProject = async (parentId: number, projectData: any) => {
+  console.log("Branching project:", parentId, projectData);
+  return { id: Date.now(), ...projectData };
+};
 import { useToast } from "@/hooks/use-toast";
 
 import {

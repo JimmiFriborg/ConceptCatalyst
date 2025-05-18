@@ -151,3 +151,24 @@ html {
 textarea {
   -webkit-overflow-scrolling: touch;
 }
+
+/* Scrollable container for long content */
+.scrollable-container {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Category zone improvements */
+.category-zone {
+  @apply transition-all duration-150 ease-in-out;
+}
+
+.drag-over {
+  @apply ring-2 ring-blue-500 bg-blue-50 scale-105 dark:bg-blue-950/50;
+  transform: scale(1.02);
+}
+
+.category-zone-rejected {
+  @apply border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30;
+}

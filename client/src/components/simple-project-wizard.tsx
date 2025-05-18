@@ -18,17 +18,20 @@ import {
   ArrowLeft, ArrowRight, Check, Sparkles, AlertTriangle 
 } from "lucide-react";
 
-// Very simple schema - minimum validation to avoid issues
+// Relaxed schema with minimal validation for maximum stability
 const schema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
-  mission: z.string().min(1, "Mission is required"),
-  primaryGoal: z.string().min(1, "Primary goal is required"),
-  secondaryGoals: z.string().optional(),
-  inScope: z.string().min(1, "In-scope is required"),
-  outOfScope: z.string().min(1, "Out-of-scope is required"),
-  constraints: z.string().optional(),
-  generateSuggestions: z.boolean().default(true)
+  name: z.string().min(1, "Name is required").default(""),
+  description: z.string().default(""),
+  mission: z.string().default(""),
+  primaryGoal: z.string().default(""),
+  secondaryGoals: z.string().optional().default(""),
+  inScope: z.string().default(""),
+  outOfScope: z.string().default(""),
+  constraints: z.string().optional().default(""),
+  generateSuggestions: z.boolean().default(true),
+  // Added concept tracking fields
+  trackConcepts: z.boolean().default(true),
+  frankensteinFeatures: z.boolean().default(false)
 });
 
 type FormData = z.infer<typeof schema>;

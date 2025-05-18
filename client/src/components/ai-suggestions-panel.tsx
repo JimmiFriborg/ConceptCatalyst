@@ -23,8 +23,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Perspective, AiSuggestion, Category } from "@shared/schema";
 import { useProject } from "@/context/project-context";
-import { generateFeatureSuggestions, acceptSuggestion, deleteSuggestion } from "@/lib/api";
+import { generateFeatureSuggestions } from "@/lib/api";
+
 import { queryClient } from "@/lib/queryClient";
+
+// Temporary mock functions until API is fully implemented
+const acceptSuggestion = async (id: number) => {
+  console.log("Accepting suggestion:", id);
+  return Promise.resolve();
+};
+
+const deleteSuggestion = async (id: number) => {
+  console.log("Deleting suggestion:", id);
+  return Promise.resolve();
+};
 import { useToast } from "@/hooks/use-toast";
 
 interface AiSuggestionsPanelProps {

@@ -9,13 +9,14 @@ import { AddFeatureDialog } from "@/components/add-feature-dialog";
 import { BranchRecommendationDialog } from "@/components/branch-recommendation-dialog";
 import { BranchProjectsSection } from "@/components/branch-projects-section";
 import { DriftDetectionAlert } from "@/components/drift-detection-alert";
+import { ProjectEvaluation } from "@/components/project-evaluation";
 import { PriorityVisualization } from "@/components/priority-visualization";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Menu, PlusCircle, Download, ArrowLeft, ArrowRight, GitBranch, BarChart2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Feature } from "@shared/schema";
+import { Feature, Project } from "@shared/schema";
 import { useIsMobile as useMobile } from "@/hooks/use-mobile";
 import { analyzeBranching } from "@/lib/api";
 
@@ -40,13 +41,13 @@ export default function ProjectView({ id }: ProjectViewProps) {
   
   const { data: project, isLoading: isProjectLoading } = useProjectDetails(id);
   const { 
-    data: features, 
+    data: features = [], 
     isLoading: isFeaturesLoading, 
     isError: isFeaturesError 
   } = useProjectFeatures(id);
   
   const { 
-    data: suggestions,
+    data: suggestions = [],
     isLoading: isSuggestionsLoading
   } = useProjectSuggestions(id);
 
@@ -58,14 +59,14 @@ export default function ProjectView({ id }: ProjectViewProps) {
 
   // Update features in context when data changes
   useEffect(() => {
-    if (features) {
-      setFeatures(features);
+    if (features && Array.isArray(features)) {
+      setFeatures(features as Feature[]);
     }
   }, [features, setFeatures]);
 
   // Update AI suggestions in context when data changes
   useEffect(() => {
-    if (suggestions) {
+    if (suggestions && Array.isArray(suggestions)) {
       setAiSuggestions(suggestions);
     }
   }, [suggestions, setAiSuggestions]);
@@ -73,16 +74,16 @@ export default function ProjectView({ id }: ProjectViewProps) {
   // Handle navigation between features
   const handlePreviousFeature = () => {
     if (features && Array.isArray(features) && features.length > 0) {
-      setCurrentFeatureIndex((prev: number) => 
-        prev > 0 ? prev - 1 : features.length - 1
+      setCurrentFeatureIndex(
+        currentFeatureIndex > 0 ? currentFeatureIndex - 1 : features.length - 1
       );
     }
   };
 
   const handleNextFeature = () => {
     if (features && Array.isArray(features) && features.length > 0) {
-      setCurrentFeatureIndex((prev: number) => 
-        prev < features.length - 1 ? prev + 1 : 0
+      setCurrentFeatureIndex(
+        currentFeatureIndex < features.length - 1 ? currentFeatureIndex + 1 : 0
       );
     }
   };
@@ -91,10 +92,13 @@ export default function ProjectView({ id }: ProjectViewProps) {
 
   // Export project data
   const handleExport = () => {
-    if (!project || !features) return;
+    if (!project || !features || !Array.isArray(features) || features.length === 0) return;
 
     const projectData = {
-      project,
+      project: {
+        ...project,
+        name: project.name || "Untitled Project"
+      },
       features,
       exportDate: new Date().toISOString()
     };
@@ -102,7 +106,7 @@ export default function ProjectView({ id }: ProjectViewProps) {
     const dataStr = JSON.stringify(projectData, null, 2);
     const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
     
-    const exportFileDefaultName = `${project.name.replace(/\s+/g, '_')}_export.json`;
+    const exportFileDefaultName = `${(project.name || "Untitled_Project").replace(/\s+/g, '_')}_export.json`;
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
@@ -190,7 +194,7 @@ export default function ProjectView({ id }: ProjectViewProps) {
         </div>
         
         {/* Main working area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-y-auto">
           {/* Current Feature Display */}
           <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-visible">
             <div className="py-6 px-4 sm:px-6 lg:px-8">
@@ -267,14 +271,23 @@ export default function ProjectView({ id }: ProjectViewProps) {
           )}
           
           {/* Autonomous Drift Detection Alert */}
-          {features && features.length >= 3 && (
+          {features && Array.isArray(features) && features.length >= 3 && (
             <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
-              <DriftDetectionAlert projectId={id} features={features} />
+              <DriftDetectionAlert projectId={id} features={features as Feature[]} />
             </div>
           )}
           
-          {/* Category Zones */}
-          <CategoryZones />
+          {/* AI Project Evaluation */}
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+            <ProjectEvaluation 
+              projectId={id} 
+              project={project as Project} 
+              features={features as Feature[]} 
+            />
+          </div>
+          
+          {/* Enhanced Category Zones with custom category support */}
+          <EnhancedCategoryZones />
         </div>
       </div>
       

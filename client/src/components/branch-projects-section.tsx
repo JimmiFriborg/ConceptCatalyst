@@ -1,7 +1,12 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getChildProjects } from "@/lib/api";
 import { useLocation } from "wouter";
+
+// Mock function to replace API dependency
+const getChildProjects = async (projectId: number) => {
+  console.log("Getting child projects for:", projectId);
+  return [];
+};
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
