@@ -95,9 +95,6 @@ export function ProjectWizard({ open, onOpenChange }: ProjectWizardProps) {
     outOfScope?: string[];
   }>({});
   
-  // Cache key for storing form data in localStorage
-  const CACHE_KEY = 'project_wizard_cache';
-  
   // Wizard steps
   const totalSteps = 4;
   const stepTitles = [

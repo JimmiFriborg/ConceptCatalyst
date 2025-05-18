@@ -4,8 +4,8 @@ import { useProjects } from "@/context/project-context";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AddProjectDialog } from "@/components/add-project-dialog";
-import { ProjectWizard } from "@/components/project-wizard";
+// We're using the improved project wizard instead of the basic dialog
+import { ProjectWizardNew } from "@/components/project-wizard-new";
 import { PlusCircle, FolderOpen, Folder, Clock, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -176,7 +176,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      <ProjectWizard
+      <ProjectWizardNew
         open={isAddProjectOpen}
         onOpenChange={setIsAddProjectOpen}
       />
