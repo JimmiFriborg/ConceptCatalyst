@@ -43,6 +43,12 @@ export const projects = pgTable("projects", {
   name: text("name").notNull(),
   description: text("description"),
   parentId: integer("parent_id"),
+  // Project Wizard Extensions
+  mission: text("mission"),
+  goals: jsonb("goals").default('[]'),
+  inScope: jsonb("in_scope").default('[]'),
+  outOfScope: jsonb("out_of_scope").default('[]'),
+  constraints: jsonb("constraints").default('[]'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -50,6 +56,11 @@ export const insertProjectSchema = createInsertSchema(projects).pick({
   name: true,
   description: true,
   parentId: true,
+  mission: true,
+  goals: true,
+  inScope: true,
+  outOfScope: true,
+  constraints: true,
 });
 
 export type InsertProject = z.infer<typeof insertProjectSchema>;

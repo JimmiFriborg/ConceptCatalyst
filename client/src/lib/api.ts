@@ -81,6 +81,23 @@ export async function generateFeatureSuggestions(projectId: number, perspective:
   return res.json();
 }
 
+export async function generateFeaturesFromProjectInfo(
+  projectId: number, 
+  data: {
+    mission?: string;
+    goals?: string[];
+    inScope?: string[];
+    outOfScope?: string[];
+  }
+) {
+  const res = await apiRequest(
+    "POST", 
+    `/api/projects/${projectId}/ai/suggest-features-from-info`, 
+    data
+  );
+  return res.json();
+}
+
 export async function acceptSuggestion(id: number) {
   const res = await apiRequest("POST", `/api/ai/suggestions/${id}/accept`, {});
   return res.json();

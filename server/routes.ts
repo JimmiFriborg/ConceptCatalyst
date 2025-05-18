@@ -527,6 +527,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete suggestion" });
     }
   });
+  
+  // Generate feature suggestions based on project information from wizard
+  app.post("/api/projects/:projectId/ai/suggest-features-from-info", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      const schema = z.object({
+        mission: z.string().optional(),
+        goals: z.array(z.string()).optional(),
+        inScope: z.array(z.string()).optional(),
+        outOfScope: z.array(z.string()).optional()
+      });
+      
+      const validateResult = schema.safeParse(req.body);
+      
+      if (!validateResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid data", 
+          errors: validateResult.error.format() 
+        });
+      }
+      
+      const { mission, goals, inScope, outOfScope } = validateResult.data;
+      
+      // Generate feature suggestions based on project information
+      const suggestions = await generateFeaturesFromProjectInfo(
+        project.name,
+        mission || project.mission,
+        goals || [],
+        inScope || [],
+        outOfScope || []
+      );
+      
+      // Store suggestions in the database
+      const storedSuggestions = await Promise.all(
+        suggestions.map(async suggestion => 
+          storage.createAiSuggestion({
+            projectId,
+            name: suggestion.name,
+            description: suggestion.description,
+            perspective: suggestion.perspective,
+            suggestedCategory: suggestion.suggestedCategory
+          })
+        )
+      );
+      
+      res.json(storedSuggestions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate feature suggestions from project info" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
