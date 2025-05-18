@@ -94,21 +94,10 @@ export function SimpleProjectWizard({ open, onOpenChange }: WizardProps) {
   };
 
   // Simple next step handler
-  const goToNextStep = async () => {
-    // Validate current step
-    let isValid = false;
-    
-    if (step === 1) {
-      isValid = await step1Form.trigger();
-    } else if (step === 2) {
-      isValid = await step2Form.trigger();
-    } else if (step === 3) {
-      isValid = await step3Form.trigger();
-    }
-    
-    if (isValid) {
-      setStep(Math.min(step + 1, 4));
-    }
+  const goToNextStep = () => {
+    // Just advance to the next step without validation for now
+    // This ensures we can always get to the next step
+    setStep(Math.min(step + 1, 4));
   };
   
   // Simple previous step handler
