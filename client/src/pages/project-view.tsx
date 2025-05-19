@@ -11,10 +11,11 @@ import { BranchProjectsSection } from "@/components/branch-projects-section";
 import { DriftDetectionAlert } from "@/components/drift-detection-alert";
 import { ProjectEvaluation } from "@/components/project-evaluation";
 import { PriorityVisualization } from "@/components/priority-visualization";
+import { AiFeatureSuggestionDialog } from "@/components/ai-feature-suggestion-dialog";
 // Removed Frankenstein Feature dialog to improve stability
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Menu, PlusCircle, Download, ArrowLeft, ArrowRight, GitBranch, BarChart2 } from "lucide-react";
+import { Menu, PlusCircle, Download, ArrowLeft, ArrowRight, GitBranch, BarChart2, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Feature, Project } from "@shared/schema";
@@ -30,6 +31,7 @@ export default function ProjectView({ id }: ProjectViewProps) {
   const isMobile = useMobile();
   const [isAddFeatureOpen, setIsAddFeatureOpen] = useState(false);
   const [isBranchDialogOpen, setIsBranchDialogOpen] = useState(false);
+  const [isAiSuggestionDialogOpen, setIsAiSuggestionDialogOpen] = useState(false);
   const [showVisualization, setShowVisualization] = useState(false);
   
   const { 
@@ -197,6 +199,13 @@ export default function ProjectView({ id }: ProjectViewProps) {
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
+            <Button 
+              variant="outline"
+              onClick={() => setIsAiSuggestionDialogOpen(true)}
+            >
+              <Zap className="mr-2 h-4 w-4" />
+              AI Suggestions
+            </Button>
             <Button onClick={() => setIsAddFeatureOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Feature
@@ -329,6 +338,19 @@ export default function ProjectView({ id }: ProjectViewProps) {
       />
       
       {/* Removed Frankenstein Feature Dialog to improve stability */}
+      
+      {/* AI Feature Suggestion dialog */}
+      <AiFeatureSuggestionDialog
+        open={isAiSuggestionDialogOpen}
+        onOpenChange={setIsAiSuggestionDialogOpen}
+        projectId={id}
+        projectInfo={{
+          mission: project?.mission || "",
+          goals: project?.goals as string[] || [],
+          inScope: project?.inScope as string[] || [],
+          outOfScope: project?.outOfScope as string[] || []
+        }}
+      />
       
       {/* We no longer need the branch recommendation dialog here as it's handled by the DriftDetectionAlert component */}
     </div>
