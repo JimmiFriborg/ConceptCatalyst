@@ -44,16 +44,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-end gap-3">
-            <Button onClick={() => navigate("/new")}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add
-            </Button>
-          </div>
-        </div>
-      </div>
+      {/* Removed duplicate Add button */}
 
       <main className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
