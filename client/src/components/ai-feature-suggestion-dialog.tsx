@@ -8,16 +8,7 @@ import { queryClient } from "@/lib/queryClient";
 import { AiSuggestion } from "@shared/schema";
 import { Loader2, ZapIcon, ThumbsUp, X } from "lucide-react";
 
-// Temporary mock functions until API is fully implemented
-const acceptSuggestion = async (id: number) => {
-  console.log("Accepting suggestion:", id);
-  return Promise.resolve();
-};
-
-const deleteSuggestion = async (id: number) => {
-  console.log("Deleting suggestion:", id);
-  return Promise.resolve();
-};
+// Using real API functions for suggestions
 
 interface AiFeatureSuggestionDialogProps {
   open: boolean;
@@ -46,10 +37,17 @@ export function AiFeatureSuggestionDialog({
     
     setIsGenerating(true);
     try {
+      console.log("Generating suggestions from project info:", projectInfo);
       const result = await generateProjectFeatureSuggestionsFromInfo(projectId, projectInfo);
-      // Create mock suggestions until we have proper backend implementation
-      const mockSuggestions = result.suggestions.map((s, index) => ({
-        id: index + 1000,
+      
+      if (!result || !result.suggestions || !Array.isArray(result.suggestions)) {
+        console.error("Invalid response format:", result);
+        throw new Error("Invalid response format from server");
+      }
+      
+      // Convert API response to local suggestion format
+      const generatedSuggestions = result.suggestions.map((s, index) => ({
+        id: index + 1000, // Temporary ID for UI purposes
         projectId,
         name: s.name,
         description: s.description,
@@ -58,13 +56,20 @@ export function AiFeatureSuggestionDialog({
         createdAt: new Date()
       }));
       
-      setSuggestions(mockSuggestions);
+      console.log("Created suggestions:", generatedSuggestions);
+      setSuggestions(generatedSuggestions);
+      
+      // Refresh project suggestions
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/projects/${projectId}/ai/suggestions`] 
+      });
       
       toast({
         title: "Feature suggestions generated",
-        description: `${mockSuggestions.length} feature suggestions have been created based on your project information.`,
+        description: `${generatedSuggestions.length} feature suggestions have been created based on your project information.`,
       });
     } catch (error) {
+      console.error("Error generating suggestions:", error);
       toast({
         title: "Generation failed",
         description: "Could not generate feature suggestions. Please try again.",
@@ -77,7 +82,22 @@ export function AiFeatureSuggestionDialog({
 
   const handleAcceptSuggestion = async (suggestion: AiSuggestion) => {
     try {
-      await acceptSuggestion(suggestion.id);
+      // Create a new feature directly from the suggestion
+      const response = await fetch(`/api/projects/${projectId}/features`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: suggestion.name,
+          description: suggestion.description,
+          perspective: suggestion.perspective,
+          category: suggestion.suggestedCategory
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create feature');
+      }
       
       // Remove from suggestions list
       setSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
@@ -90,6 +110,7 @@ export function AiFeatureSuggestionDialog({
         description: "The suggested feature has been added to your project.",
       });
     } catch (error) {
+      console.error("Error accepting suggestion:", error);
       toast({
         title: "Action failed",
         description: "Could not accept the suggestion. Please try again.",

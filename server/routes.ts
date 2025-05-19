@@ -569,7 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         outOfScope || []
       );
       
-      // Store suggestions in the database
+      // Store suggestions in the database and format the response in the expected format
       const storedSuggestions = await Promise.all(
         suggestions.map(async suggestion => 
           storage.createAiSuggestion({
@@ -582,7 +582,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
       );
       
-      res.json(storedSuggestions);
+      // Format response to match what the client is expecting
+      res.json({
+        suggestions: storedSuggestions.map(s => ({
+          name: s.name,
+          description: s.description,
+          perspective: s.perspective,
+          suggestedCategory: s.suggestedCategory
+        }))
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to generate feature suggestions from project info" });
     }
