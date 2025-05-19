@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { createProject } from "@/lib/api";
+import { createProject, generateFeatureSuggestions } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -77,11 +77,29 @@ export function AddProjectDialog({ open, onOpenChange }: AddProjectDialogProps) 
         description: "New project has been created successfully.",
       });
       
-      // Navigate to the new project
-      navigate(`/projects/${project.id}`);
-      
       // Close dialog and reset form
       handleOpenChange(false);
+      
+      // Generate initial AI suggestions for the new project
+      try {
+        console.log("Generating initial AI suggestions for new project");
+        // Generate feature suggestions from each perspective
+        const perspectives = ["technical", "business", "ux", "security"] as const;
+        
+        // Start with technical perspective
+        await generateFeatureSuggestions(project.id, "technical");
+        
+        // Invalidate queries to refresh suggestions
+        queryClient.invalidateQueries({ 
+          queryKey: [`/api/projects/${project.id}/ai/suggestions`] 
+        });
+      } catch (suggestionError) {
+        console.error("Error generating initial AI suggestions:", suggestionError);
+        // Don't show error to user - this is background processing
+      }
+      
+      // Navigate to the new project
+      navigate(`/projects/${project.id}`);
     } catch (error) {
       toast({
         title: "Error",
