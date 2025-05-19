@@ -415,15 +415,19 @@ export async function generateFeatureSuggestions(
       
       Generate 3 feature suggestions focused on the ${perspective} perspective.
       
-      Return your suggestions in JSON format with an array of features:
-      [
-        {
-          "name": "Feature name",
-          "description": "Detailed description",
-          "perspective": "${perspective}",
-          "suggestedCategory": "mvp"|"launch"|"v1.5"|"v2.0"
-        }
-      ]
+      Return your suggestions in JSON format with this EXACT structure:
+      {
+        "suggestions": [
+          {
+            "name": "Feature name",
+            "description": "Detailed description",
+            "perspective": "${perspective}",
+            "suggestedCategory": "mvp"
+          }
+        ]
+      }
+      
+      Important: Use only "mvp", "launch", "v1.5", or "v2.0" as suggestedCategory values.
     `.trim();
 
     console.log("Sending request to OpenAI API...");
@@ -440,24 +444,47 @@ export async function generateFeatureSuggestions(
     }
     
     try {
+      console.log("Parsing OpenAI response:", content);
       const parsedContent = JSON.parse(content);
       
-      if (Array.isArray(parsedContent)) {
-        return parsedContent.map(item => ({
+      // Primary structure - direct suggestions array
+      if (parsedContent.suggestions && Array.isArray(parsedContent.suggestions)) {
+        console.log(`Found ${parsedContent.suggestions.length} suggestions in the response`);
+        return parsedContent.suggestions.map((item: any) => ({
           name: item.name || "Unnamed Feature",
           description: item.description || "No description provided",
           perspective: perspective,
-          suggestedCategory: item.suggestedCategory as Category || "mvp"
+          suggestedCategory: (item.suggestedCategory as Category) || "mvp"
         }));
-      } else if (parsedContent.suggestions && Array.isArray(parsedContent.suggestions)) {
-        return parsedContent.suggestions.map(item => ({
+      } 
+      // Fallback - direct array at the root
+      else if (Array.isArray(parsedContent)) {
+        console.log(`Found ${parsedContent.length} suggestions in root array`);
+        return parsedContent.map((item: any) => ({
           name: item.name || "Unnamed Feature",
           description: item.description || "No description provided",
           perspective: perspective,
-          suggestedCategory: item.suggestedCategory as Category || "mvp"
+          suggestedCategory: (item.suggestedCategory as Category) || "mvp"
         }));
-      } else {
-        console.log("Unexpected response format from OpenAI");
+      } 
+      // Last attempt - look for any array property in the response
+      else {
+        const arrayProps = Object.keys(parsedContent).filter((key: string) => 
+          Array.isArray(parsedContent[key]) && parsedContent[key].length > 0
+        );
+        
+        if (arrayProps.length > 0) {
+          const firstArrayProp = arrayProps[0];
+          console.log(`Using ${firstArrayProp} array with ${parsedContent[firstArrayProp].length} items`);
+          return parsedContent[firstArrayProp].map((item: any) => ({
+            name: item.name || "Unnamed Feature",
+            description: item.description || "No description provided",
+            perspective: perspective,
+            suggestedCategory: (item.suggestedCategory as Category) || "mvp"
+          }));
+        }
+        
+        console.log("Unexpected response format from OpenAI:", parsedContent);
         return getDefaultSuggestions();
       }
     } catch (error) {
