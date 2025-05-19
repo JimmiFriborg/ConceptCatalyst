@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { Feature, Project } from "@shared/schema";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Slider } from "@/components/ui/slider";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Feature } from "@shared/schema";
+import { Separator } from "@/components/ui/separator";
+import { Braces, Sparkles, Brain, Lightbulb, X, Plus, Zap } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface FrankensteinFeatureDialogProps {
   open: boolean;
@@ -40,379 +41,342 @@ export function FrankensteinFeatureDialog({
   onOpenChange,
   projectId
 }: FrankensteinFeatureDialogProps) {
-  const [selectedFeatures, setSelectedFeatures] = useState<Feature[]>([]);
-  const [randomizedFeatures, setRandomizedFeatures] = useState<Feature[]>([]);
-  const [generatedConcepts, setGeneratedConcepts] = useState<ConceptIdea[]>([]);
-  const [isGeneratingConcepts, setIsGeneratingConcepts] = useState(false);
-  const [numberOfFeatures, setNumberOfFeatures] = useState(3);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [selectedFeatures, setSelectedFeatures] = useState<Feature[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedConcept, setGeneratedConcept] = useState<ConceptIdea | null>(null);
+  const [innovationIdea, setInnovationIdea] = useState("");
+  const [innovations, setInnovations] = useState<string[]>([]);
   
-  // Mock data for now (to be replaced with actual data from API call)
-  const mockProjects = [
-    { id: 1, name: "Project Alpha" },
-    { id: 2, name: "Project Beta" },
-    { id: 3, name: "Project Gamma" }
-  ];
-
-  // Mock function to get all features across projects
-  const getAllFeatures = async () => {
-    // This would be replaced with an actual API call
-    console.log("Fetching all features across projects");
-    return [
-      { id: 1, name: "User Authentication", description: "Secure login system with 2FA", category: "mvp", projectId: 1 },
-      { id: 2, name: "Data Visualization", description: "Interactive charts and graphs", category: "v1.5", projectId: 1 },
-      { id: 3, name: "Export to PDF", description: "Generate PDF reports", category: "v2.0", projectId: 2 },
-      { id: 4, name: "Real-time Notifications", description: "Push notifications for updates", category: "launch", projectId: 3 },
-      { id: 5, name: "AI Recommendations", description: "Personalized content suggestions", category: "mvp", projectId: 2 },
-    ] as Feature[];
-  };
-
-  // Use react-query to fetch features from all user projects
-  const { data: allFeatures = [], isLoading } = useQuery({
-    queryKey: ['all-features'],
-    queryFn: getAllFeatures
+  // Fetch all features from the feature bank
+  const { data: featureBank = [], isLoading } = useQuery<Feature[]>({
+    queryKey: ["/api/features"],
+    queryFn: async () => {
+      // This is a placeholder - we'll need to implement an API endpoint for all features
+      const res = await fetch("/api/features");
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
-
+  
+  // Reset state when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      setSelectedFeatures([]);
+      setGeneratedConcept(null);
+      setInnovations([]);
+      setInnovationIdea("");
+    }
+  }, [open]);
+  
   const handleFeatureSelect = (feature: Feature) => {
-    if (selectedFeatures.find(f => f.id === feature.id)) {
+    if (selectedFeatures.some(f => f.id === feature.id)) {
       setSelectedFeatures(selectedFeatures.filter(f => f.id !== feature.id));
     } else {
       setSelectedFeatures([...selectedFeatures, feature]);
     }
   };
-
-  const randomizeFeatures = () => {
-    // Randomly select N features from the available pool
-    const shuffled = [...allFeatures].sort(() => 0.5 - Math.random());
-    setRandomizedFeatures(shuffled.slice(0, numberOfFeatures));
-    setSelectedFeatures(shuffled.slice(0, numberOfFeatures));
+  
+  const handleAddInnovation = () => {
+    if (innovationIdea.trim()) {
+      setInnovations([...innovations, innovationIdea.trim()]);
+      setInnovationIdea("");
+    }
   };
-
-  const generateConcepts = async () => {
+  
+  const handleRemoveInnovation = (index: number) => {
+    setInnovations(innovations.filter((_, i) => i !== index));
+  };
+  
+  const generateConcept = async () => {
     if (selectedFeatures.length < 2) {
       toast({
-        title: "Not enough features",
-        description: "Please select at least 2 features to generate concepts",
+        title: "Not enough features selected",
+        description: "Please select at least 2 features to combine.",
         variant: "destructive"
       });
       return;
     }
-
-    setIsGeneratingConcepts(true);
+    
+    setIsGenerating(true);
     
     try {
-      // This would be an actual API call to the AI service
-      // For now, we'll just wait and return mock data
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockConcepts: ConceptIdea[] = [
-        {
-          id: '1',
-          title: "Intelligent Reporting System",
-          description: "A system that combines data visualization with AI recommendations to create smart, context-aware reports that users can export as PDFs.",
+      // In a real implementation, this would call an API endpoint that uses OpenAI
+      // For now, we'll simulate the concept generation
+      setTimeout(() => {
+        const concept: ConceptIdea = {
+          id: Math.random().toString(36).substr(2, 9),
+          title: "Combined Feature Concept",
+          description: `A new feature concept that combines elements from ${selectedFeatures.length} different features with ${innovations.length} innovative additions.`,
           sourcedFeatures: selectedFeatures.map(f => f.id),
-          innovations: [
-            "Context-aware data presentation",
-            "Learning from user interactions to improve future reports"
-          ],
-          implementation: "Combine the data visualization engine with the AI recommendation system, then pipe the output to the PDF export module."
-        },
-        {
-          id: '2',
-          title: "Security Insight Platform",
-          description: "Leverage authentication data and AI to provide personalized security recommendations, with visual representations of potential vulnerabilities.",
-          sourcedFeatures: selectedFeatures.map(f => f.id),
-          innovations: [
-            "Predictive security profiling",
-            "Visual security posture assessment"
-          ],
-          implementation: "Use authentication patterns to feed the AI recommendation engine, then visualize the outputs."
-        }
-      ];
+          innovations: innovations,
+          implementation: "This feature can be implemented by integrating the core functionality from the selected features and enhancing them with the innovative elements."
+        };
+        
+        setGeneratedConcept(concept);
+        setIsGenerating(false);
+      }, 2000);
       
-      setGeneratedConcepts(mockConcepts);
-      toast({
-        title: "Concepts generated",
-        description: `Created ${mockConcepts.length} innovative concept ideas!`
-      });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to generate concepts. Please try again.",
+        title: "Error generating concept",
+        description: "There was an error generating your feature concept.",
         variant: "destructive"
       });
-    } finally {
-      setIsGeneratingConcepts(false);
+      setIsGenerating(false);
     }
   };
-
+  
   const saveAsConcept = async (concept: ConceptIdea) => {
     try {
-      // This would be an actual API call to save the concept
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Concept saved",
-        description: `"${concept.title}" has been saved as a new concept feature.`
+      // Create a new concept (essentially a project with type concept)
+      const newConcept = await apiRequest("/api/concepts", {
+        method: "POST",
+        body: JSON.stringify({
+          name: concept.title,
+          description: concept.description,
+          frankensteinFeatures: concept.sourcedFeatures,
+          innovations: concept.innovations,
+          implementation: concept.implementation,
+          parentId: projectId
+        })
       });
       
-      // Update the data cache to reflect the new concept
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      toast({
+        title: "Concept created",
+        description: "Your new feature concept has been saved.",
+      });
+      
+      onOpenChange(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to save concept. Please try again.",
+        title: "Error saving concept",
+        description: "There was an error saving your feature concept.",
         variant: "destructive"
       });
     }
   };
-
-  // Get project name by ID
-  const getProjectName = (projectId: number) => {
-    const project = mockProjects.find(p => p.id === projectId);
-    return project ? project.name : 'Unknown Project';
-  };
-
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] h-auto max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-xl">Frankenstein Feature Compilation</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Braces className="h-5 w-5 text-primary" />
+            Frankenstein Feature Generator
+          </DialogTitle>
           <DialogDescription>
-            Mix and match features from your projects to create innovative concepts
+            Combine existing features with new ideas to create innovative concepts.
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="selection" className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="selection">Feature Selection</TabsTrigger>
-            <TabsTrigger value="combination">Feature Combination</TabsTrigger>
-            <TabsTrigger value="concepts">Generated Concepts</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="selection" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h3 className="font-medium">Select Features</h3>
-                <p className="text-sm text-gray-500">Choose features from your projects to combine</p>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm">Number of random features: {numberOfFeatures}</span>
-                  <Slider 
-                    value={[numberOfFeatures]} 
-                    min={2} 
-                    max={5} 
-                    step={1} 
-                    onValueChange={(value) => setNumberOfFeatures(value[0])} 
-                    className="w-[150px]" 
-                  />
-                </div>
-                <Button onClick={randomizeFeatures} variant="secondary">
-                  Randomize
-                </Button>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 overflow-hidden">
+          {/* Feature Selection Panel */}
+          <div className="flex flex-col h-full">
+            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-primary" />
+              Select Features
+            </h3>
             
-            <div className="border rounded-md p-4">
-              {isLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {allFeatures.map((feature) => (
-                    <div key={feature.id} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md">
-                      <div className="flex items-center space-x-3">
+            {isLoading ? (
+              <div className="flex-1 grid grid-cols-1 gap-3">
+                {[1, 2, 3, 4].map(i => (
+                  <Card key={i} className="h-24 animate-pulse bg-secondary/20" />
+                ))}
+              </div>
+            ) : (
+              <ScrollArea className="flex-1 pr-4 h-[300px]">
+                <div className="space-y-3">
+                  {featureBank.map(feature => (
+                    <div
+                      key={feature.id}
+                      className={`p-3 border rounded-md transition-colors cursor-pointer ${
+                        selectedFeatures.some(f => f.id === feature.id)
+                          ? "border-primary bg-primary/10"
+                          : "hover:bg-secondary/20"
+                      }`}
+                      onClick={() => handleFeatureSelect(feature)}
+                    >
+                      <div className="flex items-start gap-2">
                         <Checkbox 
-                          id={`feature-${feature.id}`} 
-                          checked={!!selectedFeatures.find(f => f.id === feature.id)}
+                          checked={selectedFeatures.some(f => f.id === feature.id)}
                           onCheckedChange={() => handleFeatureSelect(feature)}
+                          className="mt-1"
                         />
                         <div>
-                          <label 
-                            htmlFor={`feature-${feature.id}`} 
-                            className="font-medium cursor-pointer"
-                          >
-                            {feature.name}
-                          </label>
-                          <p className="text-sm text-gray-500">{feature.description}</p>
+                          <div className="font-medium">{feature.name}</div>
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {feature.description}
+                          </p>
+                          <div className="flex gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {feature.perspective}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {feature.category}
+                            </Badge>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{feature.category}</Badge>
-                        <Badge variant="secondary">{getProjectName(feature.projectId)}</Badge>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-            
-            <div className="flex justify-end">
-              <Button onClick={() => document.querySelector('[data-value="combination"]')?.click()}>
-                Next: Combine Features
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="combination" className="space-y-4">
-            <div className="space-y-1">
-              <h3 className="font-medium">Selected Features ({selectedFeatures.length})</h3>
-              <p className="text-sm text-gray-500">Review your feature selection before generating concepts</p>
-            </div>
-            
-            {selectedFeatures.length === 0 ? (
-              <div className="text-center py-8 border rounded-md">
-                <p className="text-gray-500">No features selected. Go back to select features.</p>
-                <Button 
-                  variant="ghost" 
-                  className="mt-2"
-                  onClick={() => document.querySelector('[data-value="selection"]')?.click()}
-                >
-                  Select Features
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {selectedFeatures.map((feature) => (
-                  <Card key={feature.id} className="overflow-hidden">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-base">{feature.name}</CardTitle>
-                        <Badge variant="outline">{feature.category}</Badge>
-                      </div>
-                      <CardDescription>{getProjectName(feature.projectId)}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-sm">
-                      <p>{feature.description}</p>
-                    </CardContent>
-                    <CardFooter className="border-t pt-2 pb-2 bg-gray-50 dark:bg-gray-800">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="ml-auto text-xs"
-                        onClick={() => handleFeatureSelect(feature)}
-                      >
-                        Remove
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+              </ScrollArea>
             )}
             
-            <div className="flex justify-between mt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => document.querySelector('[data-value="selection"]')?.click()}
-              >
-                Back to Selection
-              </Button>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground mb-2">
+                {selectedFeatures.length} feature{selectedFeatures.length !== 1 ? 's' : ''} selected
+              </p>
               
-              <Button 
-                disabled={selectedFeatures.length < 2 || isGeneratingConcepts}
-                onClick={generateConcepts}
-              >
-                {isGeneratingConcepts ? "Generating..." : "Generate Concepts"}
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="concepts" className="space-y-4">
-            <div className="space-y-1">
-              <h3 className="font-medium">Generated Concepts</h3>
-              <p className="text-sm text-gray-500">AI-generated concepts from your selected features</p>
-            </div>
-            
-            {generatedConcepts.length === 0 ? (
-              <div className="text-center py-8 border rounded-md">
-                <p className="text-gray-500">No concepts generated yet. Combine features to create concepts.</p>
-                <Button 
-                  variant="ghost" 
-                  className="mt-2"
-                  onClick={() => document.querySelector('[data-value="combination"]')?.click()}
-                >
-                  Combine Features
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {generatedConcepts.map((concept) => (
-                  <Card key={concept.id} className="overflow-hidden">
-                    <CardHeader className="pb-3 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30">
-                      <CardTitle className="text-lg">{concept.title}</CardTitle>
-                      <CardDescription className="text-sm">
-                        AI-generated concept from {concept.sourcedFeatures.length} features
-                      </CardDescription>
-                    </CardHeader>
-                    
-                    <CardContent className="pt-4 space-y-4">
-                      <div>
-                        <h4 className="text-sm font-medium mb-1">Concept Description</h4>
-                        <p className="text-sm">{concept.description}</p>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div>
-                        <h4 className="text-sm font-medium mb-1">Innovative Aspects</h4>
-                        <ul className="space-y-1 text-sm">
-                          {concept.innovations.map((innovation, idx) => (
-                            <li key={idx} className="flex items-baseline">
-                              <span className="text-blue-500 mr-2">•</span>
-                              <span>{innovation}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div>
-                        <h4 className="text-sm font-medium mb-1">Implementation Approach</h4>
-                        <p className="text-sm">{concept.implementation}</p>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div>
-                        <h4 className="text-sm font-medium mb-1">Source Features</h4>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {selectedFeatures.map((feature) => (
-                            <Badge key={feature.id} variant="outline" className="text-xs">
-                              {feature.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                    
-                    <CardFooter className="bg-gray-50 dark:bg-gray-800 border-t">
-                      <Button
-                        onClick={() => saveAsConcept(concept)}
-                        className="ml-auto"
-                      >
-                        Save as Feature Concept
-                      </Button>
-                    </CardFooter>
-                  </Card>
+              <div className="flex flex-wrap gap-2">
+                {selectedFeatures.map(feature => (
+                  <Badge 
+                    key={feature.id}
+                    variant="secondary"
+                    className="gap-1 pl-2"
+                  >
+                    {feature.name}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 ml-1"
+                      onClick={() => handleFeatureSelect(feature)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
                 ))}
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            </div>
+          </div>
+          
+          {/* Innovation Panel */}
+          <div className="flex flex-col h-full">
+            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Add Innovations
+            </h3>
+            
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="Add a new innovative idea..."
+                value={innovationIdea}
+                onChange={(e) => setInnovationIdea(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddInnovation()}
+              />
+              <Button onClick={handleAddInnovation} disabled={!innovationIdea.trim()}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <ScrollArea className="flex-1 pr-4 h-[150px]">
+              <div className="space-y-2">
+                {innovations.map((innovation, index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center justify-between p-2 border rounded-md"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-yellow-500" />
+                      <span>{innovation}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveInnovation(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {innovations.length === 0 && (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Lightbulb className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                    <p>Add innovative ideas to enhance your feature concept</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+            
+            <Separator className="my-4" />
+            
+            <Button 
+              onClick={generateConcept} 
+              disabled={selectedFeatures.length < 2 || isGenerating}
+              className="mt-auto"
+            >
+              {isGenerating ? (
+                <>Generating...</>
+              ) : (
+                <>
+                  <Brain className="mr-2 h-4 w-4" />
+                  Generate Concept
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
         
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-        </DialogFooter>
+        {/* Generated Concept */}
+        {generatedConcept && (
+          <>
+            <Separator className="my-4" />
+            
+            <div className="bg-secondary/20 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-primary" />
+                {generatedConcept.title}
+              </h3>
+              
+              <p className="mb-4">{generatedConcept.description}</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Sourced Features</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedFeatures.map(feature => (
+                      <Badge key={feature.id} variant="outline">
+                        {feature.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Innovative Additions</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {innovations.map((innovation, index) => (
+                      <Badge key={index} variant="secondary">
+                        {innovation}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <h4 className="text-sm font-medium mb-2">Implementation Notes</h4>
+              <p className="text-sm text-muted-foreground">
+                {generatedConcept.implementation}
+              </p>
+            </div>
+            
+            <DialogFooter className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setGeneratedConcept(null)}
+              >
+                Regenerate
+              </Button>
+              <Button 
+                onClick={() => saveAsConcept(generatedConcept)}
+              >
+                Save as Concept
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
