@@ -39,9 +39,16 @@ export function EnhancedCreationWizard({
       // Determine if this is a concept or full project based on data characteristics
       const isConcept = activeTab === "concept";
       
-      // In a real implementation, this would save to the API
-      // For now, we'll just show a success message
       console.log("Creating project:", { ...data, type: isConcept ? "concept" : "project" });
+      
+      // Import our API functions 
+      const { createProject } = await import("@/lib/api");
+      
+      // Create the project using our API helper
+      await createProject({
+        ...data,
+        isConcept: isConcept ? 1 : 0  // Use numeric 1/0 for better compatibility
+      });
       
       toast({
         title: `${isConcept ? "Concept" : "Project"} created successfully`,
@@ -66,9 +73,27 @@ export function EnhancedCreationWizard({
     try {
       setIsSubmitting(true);
       
-      // In a real implementation, this would save to the API
-      // For now, we'll just show a success message
+      // Create the concept using our API helper
       console.log("Creating concept:", data);
+      
+      // Import our API functions
+      const { createConcept } = await import("@/lib/api");
+      
+      // Prepare the project data with concept-specific fields
+      const conceptData = {
+        name: data.name,
+        description: data.description,
+        mission: data.inspirations?.join(", ") || null,
+        goals: data.potentialFeatures || [],
+        inScope: [],
+        outOfScope: [],
+        constraints: [],
+        technicalRequirements: data.aiPotential || "",
+        projectCategory: "other" // Default for concepts
+      };
+      
+      // Create the concept using our API helper function
+      await createConcept(conceptData);
       
       toast({
         title: "Concept created successfully",

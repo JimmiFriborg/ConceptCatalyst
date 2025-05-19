@@ -9,12 +9,14 @@ import {
 } from "@shared/schema";
 import { 
   analyzeFeature, 
-  enhanceFeatureDescription, 
   generateFeatureSuggestions,
   analyzeForBranching,
   generateTags,
   generateFeaturesFromProjectInfo
 } from "./openai";
+
+// Import the enhance description function separately
+import { enhanceFeatureDescription } from "./openai";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -317,11 +319,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { name, description } = validateResult.data;
-      const enhancement = await enhanceFeatureDescription(name, description);
       
-      res.json(enhancement);
+      // Use the openai module directly to create enhanced description
+      const prompt = `
+        Enhance and expand the following feature description with more details, technical considerations, or implementation notes:
+        
+        Feature Name: ${name}
+        Current Description: ${description}
+        
+        Provide the enhanced description in JSON format:
+        {
+          "enhancedDescription": "Your enhanced description..."
+        }
+      `;
+      
+      // Import OpenAI and create a client
+      const OpenAI = await import('openai');
+      const openai = new OpenAI.default({ 
+        apiKey: process.env.OPENAI_API_KEY 
+      });
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+      
+      const content = response.choices[0].message.content;
+      const result = JSON.parse(content || "{}");
+      
+      res.json({
+        enhancedDescription: result.enhancedDescription || description
+      });
     } catch (error) {
-      res.status(500).json({ message: "Failed to enhance description" });
+      console.error("Error in enhance-description:", error);
+      res.status(500).json({ 
+        message: "Failed to enhance description",
+        enhancedDescription: req.body.description 
+      });
     }
   });
   

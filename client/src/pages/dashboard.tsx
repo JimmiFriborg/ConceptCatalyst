@@ -20,6 +20,26 @@ export default function Dashboard() {
   const isConceptsView = location === "/concepts";
   const isProjectsView = location === "/projects";
   const viewType = isConceptsView ? "concept" : isProjectsView ? "project" : "all";
+  
+  // Filter projects based on the current view
+  const filteredProjects = projects?.filter(project => {
+    if (viewType === "all") return true;
+    if (viewType === "concept") {
+      // For concepts view, include projects with isConcept field set to truthy values
+      if (project.isConcept === null) return false;
+      if (typeof project.isConcept === 'number') return project.isConcept === 1;
+      if (typeof project.isConcept === 'boolean') return project.isConcept === true;
+      if (typeof project.isConcept === 'string') return project.isConcept === 'true';
+      return false;
+    } else {
+      // For projects view, exclude those with isConcept field
+      if (project.isConcept === null || project.isConcept === undefined) return true;
+      if (typeof project.isConcept === 'number') return project.isConcept === 0;
+      if (typeof project.isConcept === 'boolean') return project.isConcept === false;
+      if (typeof project.isConcept === 'string') return project.isConcept === 'false';
+      return true;
+    }
+  });
 
   const handleOpenProject = (id: number) => {
     navigate(`/projects/${id}`);
@@ -74,9 +94,9 @@ export default function Dashboard() {
                 Error loading projects. Please try again later.
               </p>
             </Card>
-          ) : projects && projects.length > 0 ? (
+          ) : filteredProjects && filteredProjects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project) => (
+              {filteredProjects.map((project) => (
                 <Card key={project.id} className="overflow-hidden hover:shadow-md transition-shadow">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">

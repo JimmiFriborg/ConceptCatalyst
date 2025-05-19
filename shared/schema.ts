@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, jsonb, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -82,6 +82,9 @@ export const projects = pgTable("projects", {
   outOfScope: jsonb("out_of_scope").default('[]'),
   constraints: jsonb("constraints").default('[]'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  // Concept-related fields
+  isConcept: integer("is_concept").default(0),
+  projectCategory: text("project_category").default("other"),
 });
 
 export const insertProjectSchema = createInsertSchema(projects).pick({
@@ -93,6 +96,8 @@ export const insertProjectSchema = createInsertSchema(projects).pick({
   inScope: true,
   outOfScope: true,
   constraints: true,
+  isConcept: true,
+  projectCategory: true,
 });
 
 export type InsertProject = z.infer<typeof insertProjectSchema>;
