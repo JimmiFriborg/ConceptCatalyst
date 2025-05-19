@@ -298,132 +298,11 @@ export async function generateFeatureSuggestions(
   existingFeatures: { name: string; description: string }[],
   perspective: Perspective
 ): Promise<FeatureSuggestionResponse[]> {
-  console.log(`GenerateFeatureSuggestions called for project: ${projectName}, perspective: ${perspective}`);
+  console.log(`OpenAI API - Generating suggestions for project: ${projectName}, perspective: ${perspective}`);
+  console.log(`OpenAI API Key available: ${!!process.env.OPENAI_API_KEY}`);
   
-  try {
-    // Check for API key
-    if (!process.env.OPENAI_API_KEY) {
-      console.error("ERROR: OPENAI_API_KEY not available!");
-      throw new Error("API key not available");
-    }
-    
-    // Log API key availability (not the actual key)
-    console.log(`OPENAI_API_KEY status: ${process.env.OPENAI_API_KEY ? "Available" : "Missing"}`);
-    console.log(`Using model: ${OPENAI_MODEL}`);
-    
-    const existingFeaturesText = existingFeatures && existingFeatures.length > 0
-      ? existingFeatures.map(f => `- ${f.name}: ${f.description}`).join("\n")
-      : "No existing features yet.";
-    
-    // Create a prompt that explicitly requests a specific JSON format
-    const prompt = `
-As a product development expert focusing on the ${perspective} perspective, please suggest 3 innovative features for this project:
-
-PROJECT DETAILS:
-Project Name: ${projectName}
-Project Description: ${projectDescription}
-
-${existingFeatures.length > 0 ? `EXISTING FEATURES:\n${existingFeaturesText}` : "No existing features yet."}
-
-INSTRUCTIONS:
-1. Suggest exactly 3 new features from the ${perspective} perspective
-2. Each feature should be realistic and implementable
-3. Ensure features don't duplicate existing ones
-4. Features should focus on ${perspective} aspects
-
-REQUIRED FORMAT:
-Return your response as a JSON array of objects with the exact structure shown below:
-[
-  {
-    "name": "Feature Name Here",
-    "description": "Detailed description of the feature (2-3 sentences)",
-    "perspective": "${perspective}",
-    "suggestedCategory": "mvp"
-  },
-  {
-    "name": "Second Feature",
-    "description": "Description of second feature",
-    "perspective": "${perspective}",
-    "suggestedCategory": "launch"
-  },
-  {
-    "name": "Third Feature",
-    "description": "Description of third feature",
-    "perspective": "${perspective}",
-    "suggestedCategory": "v1.5"
-  }
-]
-
-The suggestedCategory must be one of: "mvp", "launch", "v1.5", or "v2.0"
-Do not include any explanations or text outside of the JSON array.
-`.trim();
-
-    console.log("Sending request to OpenAI...");
-    
-    // Make API call with explicit JSON response format
-    const response = await openai.chat.completions.create({
-      model: OPENAI_MODEL,
-      messages: [
-        { 
-          role: "system", 
-          content: "You are a product feature generator that ONLY outputs valid JSON arrays with feature suggestions."
-        },
-        { 
-          role: "user", 
-          content: prompt 
-        }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-    });
-
-    console.log("Received response from OpenAI");
-    
-    // Get response content
-    const content = response.choices[0].message.content;
-    if (!content) {
-      console.error("Empty content in OpenAI response");
-      throw new Error("Empty response from API");
-    }
-    
-    try {
-      console.log("Parsing response content");
-      const parsedContent = JSON.parse(content);
-      
-      // Check if we got an array of features directly
-      if (Array.isArray(parsedContent)) {
-        console.log(`Successfully parsed ${parsedContent.length} feature suggestions`);
-        return parsedContent.map((item: any) => ({
-          name: item.name || "Unnamed Feature",
-          description: item.description || "No description provided",
-          perspective: perspective,
-          suggestedCategory: item.suggestedCategory as Category || "mvp"
-        }));
-      } 
-      // Check if features are in a suggestions property
-      else if (parsedContent.suggestions && Array.isArray(parsedContent.suggestions)) {
-        console.log(`Successfully parsed ${parsedContent.suggestions.length} feature suggestions from 'suggestions' property`);
-        return parsedContent.suggestions.map((item: any) => ({
-          name: item.name || "Unnamed Feature",
-          description: item.description || "No description provided",
-          perspective: perspective,
-          suggestedCategory: item.suggestedCategory as Category || "mvp"
-        }));
-      } 
-      // If we got some other JSON format
-      else {
-        console.error("Unexpected response format:", JSON.stringify(parsedContent).substring(0, 200));
-        throw new Error("Invalid response format");
-      }
-    } catch (parseError) {
-      console.error("Error parsing OpenAI response:", parseError);
-      console.error("Response content:", content.substring(0, 200));
-      throw new Error("Failed to parse response");
-    }
-  } catch (error) {
-    console.error("Error generating feature suggestions:", error);
-    
-    // Return pre-defined high-quality feature suggestions by perspective
+  // Default suggestions based on perspective
+  const getDefaultSuggestions = (): FeatureSuggestionResponse[] => {
     const suggestions: FeatureSuggestionResponse[] = [];
     
     if (perspective === "technical") {
@@ -513,5 +392,80 @@ Do not include any explanations or text outside of the JSON array.
     }
     
     return suggestions;
+  };
+  
+  // If no OpenAI API key, return default suggestions
+  if (!process.env.OPENAI_API_KEY) {
+    console.log("No OpenAI API key available, using default suggestions");
+    return getDefaultSuggestions();
+  }
+  
+  try {
+    const existingFeaturesText = existingFeatures.length > 0
+      ? existingFeatures.map(f => `- ${f.name}: ${f.description}`).join("\n")
+      : "No existing features yet.";
+    
+    const prompt = `
+      As a product development expert with a focus on ${perspective} perspective, suggest new features for the following project:
+      
+      Project Name: ${projectName}
+      Project Description: ${projectDescription}
+      
+      ${existingFeatures.length > 0 ? `Existing Features:\n${existingFeaturesText}` : "No existing features yet."}
+      
+      Generate 3 feature suggestions focused on the ${perspective} perspective.
+      
+      Return your suggestions in JSON format with an array of features:
+      [
+        {
+          "name": "Feature name",
+          "description": "Detailed description",
+          "perspective": "${perspective}",
+          "suggestedCategory": "mvp"|"launch"|"v1.5"|"v2.0"
+        }
+      ]
+    `.trim();
+
+    console.log("Sending request to OpenAI API...");
+    const response = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("Empty content from OpenAI response");
+      return getDefaultSuggestions();
+    }
+    
+    try {
+      const parsedContent = JSON.parse(content);
+      
+      if (Array.isArray(parsedContent)) {
+        return parsedContent.map(item => ({
+          name: item.name || "Unnamed Feature",
+          description: item.description || "No description provided",
+          perspective: perspective,
+          suggestedCategory: item.suggestedCategory as Category || "mvp"
+        }));
+      } else if (parsedContent.suggestions && Array.isArray(parsedContent.suggestions)) {
+        return parsedContent.suggestions.map(item => ({
+          name: item.name || "Unnamed Feature",
+          description: item.description || "No description provided",
+          perspective: perspective,
+          suggestedCategory: item.suggestedCategory as Category || "mvp"
+        }));
+      } else {
+        console.log("Unexpected response format from OpenAI");
+        return getDefaultSuggestions();
+      }
+    } catch (error) {
+      console.error("Failed to parse OpenAI response:", error);
+      return getDefaultSuggestions();
+    }
+  } catch (error) {
+    console.error("Error accessing OpenAI API:", error);
+    return getDefaultSuggestions();
   }
 }

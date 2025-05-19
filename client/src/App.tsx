@@ -1,4 +1,3 @@
-import React, { lazy, Suspense } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -15,16 +14,6 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/projects/:id">
         {params => <ProjectView id={parseInt(params.id)} />}
-      </Route>
-      <Route path="/board/projects/:projectId">
-        {params => {
-          const QuickProjectView = React.lazy(() => import("@/pages/quick-project-view"));
-          return (
-            <React.Suspense fallback={<div className="flex items-center justify-center h-screen">Loading project board...</div>}>
-              <QuickProjectView />
-            </React.Suspense>
-          );
-        }}
       </Route>
       <Route component={NotFound} />
     </Switch>

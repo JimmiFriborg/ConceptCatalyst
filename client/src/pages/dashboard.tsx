@@ -4,6 +4,7 @@ import { useProjects } from "@/context/project-context";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+// Using a simplified wizard with direct form inputs
 import { SimpleProjectWizard } from "@/components/simple-project-wizard";
 import { ImportProjectDialog } from "@/components/import-project-dialog";
 import { PlusCircle, FolderOpen, Folder, Clock, ArrowRight, FileUp } from "lucide-react";
@@ -17,7 +18,6 @@ export default function Dashboard() {
   const [_, navigate] = useLocation();
   const { data: projects, isLoading, isError } = useProjects();
   const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
-  // Import functionality to be added later
   const [isImportProjectOpen, setIsImportProjectOpen] = useState(false);
   const { toast } = useToast();
 
@@ -109,24 +109,14 @@ export default function Dashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardFooter className="flex justify-between pt-4">
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDeleteProject(project.id)}
-                      >
-                        <Folder className="mr-2 h-4 w-4" />
-                        Delete
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/board/projects/${project.id}`)}
-                      >
-                        <FolderOpen className="mr-2 h-4 w-4" />
-                        Board View
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDeleteProject(project.id)}
+                    >
+                      <Folder className="mr-2 h-4 w-4" />
+                      Delete
+                    </Button>
                     <Button 
                       onClick={() => handleOpenProject(project.id)}
                       size="sm"

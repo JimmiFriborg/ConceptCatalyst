@@ -21,12 +21,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
   app.get("/api/projects", async (_req: Request, res: Response) => {
     try {
-      console.log("Fetching projects from database...");
       const projects = await storage.getProjects();
-      console.log(`Successfully fetched ${projects.length} projects`);
       res.json(projects);
     } catch (error) {
-      console.error("Error fetching projects:", error);
       res.status(500).json({ message: "Failed to fetch projects" });
     }
   });
