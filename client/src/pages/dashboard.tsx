@@ -4,7 +4,8 @@ import { useProjects } from "@/context/project-context";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SimpleCreateProject } from "@/components/simple-create-project";
+import { EnhancedProjectWizard } from "@/components/enhanced-project-wizard";
+import { ImportProjectDialog } from "@/components/import-project-dialog";
 import { PlusCircle, FolderOpen, Folder, Clock, ArrowRight, FileUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -193,12 +194,15 @@ export default function Dashboard() {
         </div>
       </main>
 
-      <SimpleCreateProject
+      <EnhancedProjectWizard
         open={isAddProjectOpen}
         onOpenChange={setIsAddProjectOpen}
       />
       
-      {/* Import dialog will be added later */}
+      <ImportProjectDialog
+        open={isImportProjectOpen}
+        onOpenChange={setIsImportProjectOpen}
+      />
     </div>
   );
 }
