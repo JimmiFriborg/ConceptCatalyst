@@ -49,18 +49,15 @@ export function MainLayout({ children }: MainLayoutProps) {
                     <Link 
                       key={item.name} 
                       href={item.href}
+                      className={cn(
+                        "flex items-center px-3 py-2 text-sm font-medium rounded-md",
+                        isActive
+                          ? "text-primary bg-primary/10"
+                          : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                      )}
                     >
-                      <a 
-                        className={cn(
-                          "flex items-center px-3 py-2 text-sm font-medium rounded-md",
-                          isActive
-                            ? "text-primary bg-primary/10"
-                            : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-                        )}
-                      >
-                        <Icon className="mr-2 h-4 w-4" />
-                        {item.name}
-                      </a>
+                      <Icon className="mr-2 h-4 w-4" />
+                      {item.name}
                     </Link>
                   );
                 })}

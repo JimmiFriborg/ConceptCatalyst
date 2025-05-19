@@ -15,11 +15,16 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
-  const [_, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { data: projects, isLoading, isError } = useProjects();
   const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
   const [isImportProjectOpen, setIsImportProjectOpen] = useState(false);
   const { toast } = useToast();
+  
+  // Determine if we're showing concepts or projects based on the URL
+  const isConceptsView = location === "/concepts";
+  const isProjectsView = location === "/projects";
+  const viewType = isConceptsView ? "concept" : isProjectsView ? "project" : "all";
 
   const handleOpenProject = (id: number) => {
     navigate(`/projects/${id}`);

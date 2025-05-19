@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import ProjectView from "@/pages/project-view";
 import { ProjectProvider } from "@/context/project-context";
+import { MainLayout } from "@/components/layout/main-layout";
 
 function Router() {
   return (
@@ -15,6 +16,12 @@ function Router() {
       <Route path="/projects/:id">
         {params => <ProjectView id={parseInt(params.id)} />}
       </Route>
+      <Route path="/concepts/:id">
+        {params => <ProjectView id={parseInt(params.id)} />}
+      </Route>
+      <Route path="/concepts" component={Dashboard} />
+      <Route path="/projects" component={Dashboard} />
+      <Route path="/settings" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -25,7 +32,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ProjectProvider>
         <TooltipProvider>
-          <Router />
+          <MainLayout>
+            <Router />
+          </MainLayout>
           <Toaster />
         </TooltipProvider>
       </ProjectProvider>
