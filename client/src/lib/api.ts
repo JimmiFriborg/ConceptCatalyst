@@ -1,5 +1,22 @@
 import { queryClient } from "./queryClient";
 
+// Helper for API requests
+export const apiRequest = async (url: string, options = {}) => {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options as any).headers,
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.statusText}`);
+  }
+  
+  return await response.json();
+};
+
 // AI API functions
 export async function enhanceFeatureDescription(data: { name: string; description: string }) {
   const response = await fetch("/api/ai/enhance-description", {
@@ -194,4 +211,47 @@ export async function generateProjectFeatureSuggestionsFromInfo(projectId: numbe
   }
 
   return await response.json();
+}
+
+export async function generateFeatureSuggestions(projectId: number, perspective: string) {
+  const response = await fetch(`/api/projects/${projectId}/ai/suggest-features`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ perspective }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to generate feature suggestions");
+  }
+
+  return await response.json();
+}
+
+export async function acceptSuggestion(suggestionId: number) {
+  const response = await fetch(`/api/ai/suggestions/${suggestionId}/accept`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to accept suggestion");
+  }
+
+  return await response.json();
+}
+
+export async function deleteSuggestion(suggestionId: number) {
+  const response = await fetch(`/api/ai/suggestions/${suggestionId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete suggestion");
+  }
+
+  return true;
 }
