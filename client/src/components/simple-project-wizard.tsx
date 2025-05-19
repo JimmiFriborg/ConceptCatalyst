@@ -39,9 +39,10 @@ type FormData = z.infer<typeof schema>;
 interface WizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  type?: "project" | "concept";
 }
 
-export function SimpleProjectWizard({ open, onOpenChange }: WizardProps) {
+export function SimpleProjectWizard({ open, onOpenChange, type = "project" }: WizardProps) {
   const [step, setStep] = useState(1);
   const [_, navigate] = useLocation();
   const { toast } = useToast();
@@ -156,8 +157,8 @@ export function SimpleProjectWizard({ open, onOpenChange }: WizardProps) {
       // Update UI
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       toast({
-        title: "Project created",
-        description: "Your project has been created successfully."
+        title: `${type === "concept" ? "Concept" : "Project"} created`,
+        description: `Your ${type} has been created successfully.`
       });
       
       // Close dialog
@@ -391,8 +392,8 @@ export function SimpleProjectWizard({ open, onOpenChange }: WizardProps) {
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-[700px] h-auto max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Project Wizard</DialogTitle>
-            <DialogDescription>Create a new project (Step {step} of 4)</DialogDescription>
+            <DialogTitle>{type === "concept" ? "Concept" : "Project"} Wizard</DialogTitle>
+            <DialogDescription>Create a new {type} (Step {step} of 4)</DialogDescription>
           </DialogHeader>
           
           {/* Wizard content */}
@@ -431,7 +432,7 @@ export function SimpleProjectWizard({ open, onOpenChange }: WizardProps) {
                     onClick={handleSubmit}
                     disabled={submitting}
                   >
-                    {submitting ? "Creating..." : "Create Project"}
+                    {submitting ? "Creating..." : `Create ${type === "concept" ? "Concept" : "Project"}`}
                   </Button>
                 )}
               </div>
