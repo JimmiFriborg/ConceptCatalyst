@@ -64,6 +64,11 @@ export function useProject(id: number) {
   });
 }
 
+// Alias for useProject for backward compatibility
+export function useProjectDetails(id: number) {
+  return useProject(id);
+}
+
 // Project features fetching hook
 export function useProjectFeatures(projectId: number) {
   const fetchFeatures = async () => {

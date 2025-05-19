@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient } from '@tanstack/react-query';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -6,25 +6,16 @@ export const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
-      queryFn: async ({ queryKey }) => {
-        const endpoint = Array.isArray(queryKey) ? queryKey[0] : queryKey;
-        const response = await fetch(endpoint as string);
-        
-        if (!response.ok) {
-          throw new Error(`Network error: ${response.status} ${response.statusText}`);
-        }
-        
-        return await response.json();
-      },
     },
   },
 });
 
-export const apiRequest = async (url: string, options: RequestInit = {}) => {
+// Helper function for making API requests
+export async function apiRequest(url: string, options: RequestInit = {}) {
   const defaultHeaders = {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   };
-  
+
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -32,10 +23,17 @@ export const apiRequest = async (url: string, options: RequestInit = {}) => {
       ...options.headers,
     },
   });
-  
+
   if (!response.ok) {
-    throw new Error(`Network error: ${response.status} ${response.statusText}`);
+    const error = await response.text();
+    throw new Error(error || 'An error occurred with the request');
   }
-  
-  return await response.json();
-};
+
+  // Some endpoints might not return JSON
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return await response.json();
+  }
+
+  return await response.text();
+}

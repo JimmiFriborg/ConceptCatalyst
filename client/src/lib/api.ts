@@ -232,6 +232,10 @@ export async function rejectSuggestion(id: number) {
   return response.json();
 }
 
+export async function analyzeBranching(projectId: number) {
+  return analyzeBranchingPotential(projectId);
+}
+
 export async function analyzeBranchingPotential(projectId: number) {
   const response = await fetch(`/api/projects/${projectId}/ai/analyze-branching`, {
     method: "POST",
