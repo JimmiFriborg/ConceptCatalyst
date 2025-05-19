@@ -39,8 +39,19 @@ type WizardStep =
   | "review";
 
 // Form schemas for different entity types
+const conceptSchema = insertProjectSchema.extend({
+  type: z.literal("concept"),
+  targetAudience: z.string().optional(),
+  problemSolved: z.string().optional(),
+  goals: z.array(z.string()).optional(),
+  inScope: z.array(z.string()).optional(),
+  outOfScope: z.array(z.string()).optional(),
+  enhanceWithAi: z.boolean().default(true),
+});
+
 const projectSchema = insertProjectSchema.extend({
-  type: z.enum(["concept", "project"]),
+  type: z.literal("project"),
+  mission: z.string().optional(),
   goals: z.array(z.string()).optional(),
   inScope: z.array(z.string()).optional(),
   outOfScope: z.array(z.string()).optional(),
@@ -52,6 +63,8 @@ const featureSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   perspective: z.enum(["technical", "business", "security", "ux"]),
+  userBenefit: z.string().optional(),
+  implementationComplexity: z.enum(["low", "medium", "high"]).optional(),
   enhanceWithAi: z.boolean().default(true),
 });
 
@@ -63,6 +76,7 @@ const importSchema = z.object({
 });
 
 // Define our form data types
+type ConceptFormData = z.infer<typeof conceptSchema>;
 type ProjectFormData = z.infer<typeof projectSchema>;
 type FeatureFormData = z.infer<typeof featureSchema>;
 type ImportFormData = z.infer<typeof importSchema>;
@@ -81,12 +95,30 @@ export function UnifiedCreationWizard({
   const [currentStep, setCurrentStep] = useState<WizardStep>("type-selection");
   
   // Initialize our forms
+  // Concept-specific form
+  const conceptForm = useForm({
+    resolver: zodResolver(conceptSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      type: "concept" as const,
+      targetAudience: "",
+      problemSolved: "",
+      goals: [],
+      inScope: [],
+      outOfScope: [],
+      enhanceWithAi: true,
+    },
+    mode: "onChange",
+  });
+  
+  // Project-specific form
   const projectForm = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
       name: "",
       description: "",
-      type: initialType as "concept" | "project",
+      type: "project" as const,
       mission: "",
       goals: [],
       inScope: [],
@@ -97,12 +129,15 @@ export function UnifiedCreationWizard({
     mode: "onChange",
   });
   
+  // Feature-specific form
   const featureForm = useForm<FeatureFormData>({
     resolver: zodResolver(featureSchema),
     defaultValues: {
       name: "",
       description: "",
       perspective: "business",
+      userBenefit: "",
+      implementationComplexity: "medium",
       enhanceWithAi: true,
     },
     mode: "onChange",
@@ -122,6 +157,7 @@ export function UnifiedCreationWizard({
   // Handle dialog open/close and reset forms
   const handleOpenChange = (open: boolean) => {
     if (!open) {
+      conceptForm.reset();
       projectForm.reset();
       featureForm.reset();
       importForm.reset();
