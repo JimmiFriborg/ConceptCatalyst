@@ -8,7 +8,8 @@ import { queryClient } from "@/lib/queryClient";
 import { AiSuggestion } from "@shared/schema";
 import { Loader2, ZapIcon, ThumbsUp, X } from "lucide-react";
 
-// Using real API functions for suggestions
+// Import API client utilities
+import { apiRequest } from "@/lib/api";
 
 interface AiFeatureSuggestionDialogProps {
   open: boolean;
@@ -82,22 +83,13 @@ export function AiFeatureSuggestionDialog({
 
   const handleAcceptSuggestion = async (suggestion: AiSuggestion) => {
     try {
-      // Create a new feature directly from the suggestion
-      const response = await fetch(`/api/projects/${projectId}/features`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: suggestion.name,
-          description: suggestion.description,
-          perspective: suggestion.perspective,
-          category: suggestion.suggestedCategory
-        })
+      // Create a new feature directly from the suggestion using our API client
+      await apiRequest(`/api/projects/${projectId}/features`, 'POST', {
+        name: suggestion.name,
+        description: suggestion.description,
+        perspective: suggestion.perspective,
+        category: suggestion.suggestedCategory
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create feature');
-      }
       
       // Remove from suggestions list
       setSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
@@ -121,9 +113,8 @@ export function AiFeatureSuggestionDialog({
 
   const handleRejectSuggestion = async (suggestion: AiSuggestion) => {
     try {
-      await deleteSuggestion(suggestion.id);
-      
-      // Remove from suggestions list
+      // For suggestions generated directly in this dialog, we just remove them from local state
+      // since they aren't stored in the database yet
       setSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
       
       toast({
@@ -131,6 +122,7 @@ export function AiFeatureSuggestionDialog({
         description: "The suggestion has been removed.",
       });
     } catch (error) {
+      console.error("Error rejecting suggestion:", error);
       toast({
         title: "Action failed",
         description: "Could not reject the suggestion. Please try again.",

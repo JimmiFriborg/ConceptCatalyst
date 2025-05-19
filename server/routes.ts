@@ -96,8 +96,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const project = await storage.branchProject(parentId, validateResult.data);
       res.status(201).json(project);
-    } catch (error) {
-      if (error.message === "Parent project not found") {
+    } catch (error: any) {
+      if (error?.message === "Parent project not found") {
         return res.status(404).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to create branch project" });
@@ -591,8 +591,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           suggestedCategory: s.suggestedCategory
         }))
       });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to generate feature suggestions from project info" });
+    } catch (error: any) {
+      console.error("Error generating feature suggestions:", error);
+      res.status(500).json({ 
+        message: "Failed to generate feature suggestions from project info",
+        details: error?.message || "Unknown error"
+      });
     }
   });
 
