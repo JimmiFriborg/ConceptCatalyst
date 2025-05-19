@@ -5,7 +5,8 @@ import {
   insertProjectSchema, 
   insertFeatureSchema, 
   perspectiveEnum, 
-  categoryEnum 
+  priorityEnum,
+  conceptCategoryEnum
 } from "@shared/schema";
 import { 
   analyzeFeature, 

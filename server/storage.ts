@@ -3,14 +3,16 @@ import {
   projects, type Project, type InsertProject,
   features, type Feature, type InsertFeature,
   aiSuggestions, type AiSuggestion, type InsertAiSuggestion,
-  type Category
+  concepts, type Concept, type InsertConcept,
+  type Priority
 } from "@shared/schema";
 
 export interface IStorage {
   // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: InsertUser): Promise<User>;
   
   // Project methods
   getProjects(): Promise<Project[]>;
@@ -26,8 +28,15 @@ export interface IStorage {
   getFeature(id: number): Promise<Feature | undefined>;
   createFeature(feature: InsertFeature): Promise<Feature>;
   updateFeature(id: number, feature: Partial<InsertFeature>): Promise<Feature | undefined>;
-  updateFeatureCategory(id: number, category: Category): Promise<Feature | undefined>;
+  updateFeaturePriority(id: number, priority: Priority): Promise<Feature | undefined>;
   deleteFeature(id: number): Promise<boolean>;
+  
+  // Concept methods
+  getConcepts(): Promise<Concept[]>;
+  getConcept(id: number): Promise<Concept | undefined>;
+  createConcept(concept: InsertConcept): Promise<Concept>;
+  updateConcept(id: number, concept: Partial<InsertConcept>): Promise<Concept | undefined>;
+  deleteConcept(id: number): Promise<boolean>;
   
   // AI Suggestion methods
   getAiSuggestions(projectId: number): Promise<AiSuggestion[]>;
@@ -36,144 +45,54 @@ export interface IStorage {
   deleteAiSuggestion(id: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private projects: Map<number, Project>;
-  private features: Map<number, Feature>;
-  private aiSuggestions: Map<number, AiSuggestion>;
-  private userCurrentId: number;
-  private projectCurrentId: number;
-  private featureCurrentId: number;
-  private suggestionCurrentId: number;
-
-  constructor() {
-    // Initialize with empty maps
-    this.users = new Map();
-    this.projects = new Map();
-    this.features = new Map();
-    this.aiSuggestions = new Map();
-    this.userCurrentId = 1;
-    this.projectCurrentId = 1;
-    this.featureCurrentId = 1;
-    this.suggestionCurrentId = 1;
-    
-    // Load any persisted data from global storage
-    this.loadPersistedData();
-    
-    // Set up auto-save on a regular interval
-    setInterval(() => this.persistData(), 2000); // Save more frequently (every 2 seconds)
-    
-    // Also ensure data is saved before shutdown
-    process.on('beforeExit', () => {
-      console.log('Server shutting down, persisting data...');
-      this.persistData();
-    });
-  }
-  
-  // Persist data to localStorage
-  private persistData(): void {
-    try {
-      const dataToSave = {
-        users: Array.from(this.users.entries()),
-        projects: Array.from(this.projects.entries()),
-        features: Array.from(this.features.entries()),
-        aiSuggestions: Array.from(this.aiSuggestions.entries()),
-        userCurrentId: this.userCurrentId,
-        projectCurrentId: this.projectCurrentId,
-        featureCurrentId: this.featureCurrentId,
-        suggestionCurrentId: this.suggestionCurrentId
-      };
-      
-      // Save to global in-memory variable that persists between server restarts
-      if (global.persistedAppData === undefined) {
-        global.persistedAppData = {};
-      }
-      
-      // Deep clone the data to ensure we don't have reference issues
-      const clonedData = JSON.parse(JSON.stringify(dataToSave));
-      global.persistedAppData.memStorage = clonedData;
-      
-      // We'll only use the in-memory global variable for persistence
-      // File system persistence caused issues
-      
-      console.log(`Data persisted: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
-    } catch (error) {
-      console.error('Failed to persist data:', error);
-    }
-  }
-  
-  // Load data from persistence
-  private loadPersistedData(): void {
-    try {
-      // Try to load from global memory
-      if (global.persistedAppData && global.persistedAppData.memStorage) {
-        const data = global.persistedAppData.memStorage;
-        this.loadDataFromObject(data);
-        console.log(`Data loaded: ${this.projects.size} projects, ${this.features.size} features, ${this.aiSuggestions.size} suggestions`);
-        return;
-      }
-      
-      console.log('No persisted data found, starting with empty storage');
-    } catch (error) {
-      console.error('Failed to load persisted data:', error);
-    }
-  }
-  
-  // Helper method to populate data structures from loaded data
-  private loadDataFromObject(data: any): void {
-    // Restore maps
-    this.users = new Map(data.users);
-    this.projects = new Map(data.projects);
-    this.features = new Map(data.features);
-    this.aiSuggestions = new Map(data.aiSuggestions);
-    
-    // Restore IDs
-    this.userCurrentId = data.userCurrentId;
-    this.projectCurrentId = data.projectCurrentId;
-    this.featureCurrentId = data.featureCurrentId;
-    this.suggestionCurrentId = data.suggestionCurrentId;
-  }
-  
-  async getChildProjects(parentId: number): Promise<Project[]> {
-    return Array.from(this.projects.values()).filter(project => project.parentId === parentId);
-  }
-
+export class DatabaseStorage implements IStorage {
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async upsertUser(userData: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
   }
 
   // Project methods
   async getProjects(): Promise<Project[]> {
-    return Array.from(this.projects.values());
+    return await db.select().from(projects);
   }
 
   async getProject(id: number): Promise<Project | undefined> {
-    return this.projects.get(id);
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project;
+  }
+
+  async getChildProjects(parentId: number): Promise<Project[]> {
+    return await db.select().from(projects).where(eq(projects.parentId, parentId));
   }
 
   async createProject(insertProject: InsertProject): Promise<Project> {
-    const id = this.projectCurrentId++;
-    const project: Project = { 
-      ...insertProject, 
-      id, 
-      description: insertProject.description || null,
-      createdAt: new Date() 
-    };
-    this.projects.set(id, project);
+    const [project] = await db.insert(projects).values(insertProject).returning();
     return project;
   }
   
@@ -183,112 +102,193 @@ export class MemStorage implements IStorage {
       throw new Error("Parent project not found");
     }
     
-    const id = this.projectCurrentId++;
-    const project: Project = { 
-      ...insertProject, 
-      id, 
-      parentId,
-      description: insertProject.description || null,
-      createdAt: new Date() 
+    const projectWithParent = {
+      ...insertProject,
+      parentId
     };
-    this.projects.set(id, project);
+    
+    const [project] = await db.insert(projects).values(projectWithParent).returning();
     return project;
   }
 
   async updateProject(id: number, projectData: Partial<InsertProject>): Promise<Project | undefined> {
-    const project = this.projects.get(id);
-    if (!project) return undefined;
+    const [updatedProject] = await db
+      .update(projects)
+      .set({
+        ...projectData,
+        updatedAt: new Date()
+      })
+      .where(eq(projects.id, id))
+      .returning();
     
-    const updatedProject = { ...project, ...projectData };
-    this.projects.set(id, updatedProject);
     return updatedProject;
   }
 
   async deleteProject(id: number): Promise<boolean> {
-    // Delete associated features and suggestions first
-    const features = await this.getFeatures(id);
-    for (const feature of features) {
-      await this.deleteFeature(feature.id);
+    try {
+      // Delete associated features first
+      await db.delete(features).where(eq(features.projectId, id));
+      
+      // Delete associated AI suggestions
+      await db.delete(aiSuggestions).where(eq(aiSuggestions.projectId, id));
+      
+      // Delete the project
+      await db.delete(projects).where(eq(projects.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      return false;
     }
-    
-    const suggestions = await this.getAiSuggestions(id);
-    for (const suggestion of suggestions) {
-      await this.deleteAiSuggestion(suggestion.id);
-    }
-    
-    return this.projects.delete(id);
   }
 
   // Feature methods
   async getFeatures(projectId: number): Promise<Feature[]> {
-    return Array.from(this.features.values()).filter(
-      (feature) => feature.projectId === projectId
-    );
+    return await db
+      .select()
+      .from(features)
+      .where(eq(features.projectId, projectId));
   }
 
   async getFeature(id: number): Promise<Feature | undefined> {
-    return this.features.get(id);
+    const [feature] = await db
+      .select()
+      .from(features)
+      .where(eq(features.id, id));
+    
+    return feature;
   }
 
   async createFeature(insertFeature: InsertFeature): Promise<Feature> {
-    const id = this.featureCurrentId++;
-    const feature: Feature = { 
-      ...insertFeature, 
-      id, 
-      aiEnhanced: insertFeature.aiEnhanced || null,
-      createdAt: new Date() 
-    };
-    this.features.set(id, feature);
+    const [feature] = await db
+      .insert(features)
+      .values(insertFeature)
+      .returning();
+    
     return feature;
   }
 
   async updateFeature(id: number, featureData: Partial<InsertFeature>): Promise<Feature | undefined> {
-    const feature = this.features.get(id);
-    if (!feature) return undefined;
+    const [updatedFeature] = await db
+      .update(features)
+      .set({
+        ...featureData,
+        updatedAt: new Date()
+      })
+      .where(eq(features.id, id))
+      .returning();
     
-    const updatedFeature = { ...feature, ...featureData };
-    this.features.set(id, updatedFeature);
     return updatedFeature;
   }
 
-  async updateFeatureCategory(id: number, category: Category): Promise<Feature | undefined> {
-    const feature = this.features.get(id);
-    if (!feature) return undefined;
+  async updateFeaturePriority(id: number, priority: Priority): Promise<Feature | undefined> {
+    const [updatedFeature] = await db
+      .update(features)
+      .set({
+        priority,
+        updatedAt: new Date()
+      })
+      .where(eq(features.id, id))
+      .returning();
     
-    const updatedFeature = { ...feature, category };
-    this.features.set(id, updatedFeature);
     return updatedFeature;
   }
 
   async deleteFeature(id: number): Promise<boolean> {
-    return this.features.delete(id);
+    try {
+      await db.delete(features).where(eq(features.id, id));
+      return true;
+    } catch (error) {
+      console.error('Failed to delete feature:', error);
+      return false;
+    }
+  }
+
+  // Concept methods
+  async getConcepts(): Promise<Concept[]> {
+    return await db.select().from(concepts);
+  }
+
+  async getConcept(id: number): Promise<Concept | undefined> {
+    const [concept] = await db
+      .select()
+      .from(concepts)
+      .where(eq(concepts.id, id));
+    
+    return concept;
+  }
+
+  async createConcept(insertConcept: InsertConcept): Promise<Concept> {
+    const [concept] = await db
+      .insert(concepts)
+      .values(insertConcept)
+      .returning();
+    
+    return concept;
+  }
+
+  async updateConcept(id: number, conceptData: Partial<InsertConcept>): Promise<Concept | undefined> {
+    const [updatedConcept] = await db
+      .update(concepts)
+      .set({
+        ...conceptData,
+        updatedAt: new Date()
+      })
+      .where(eq(concepts.id, id))
+      .returning();
+    
+    return updatedConcept;
+  }
+
+  async deleteConcept(id: number): Promise<boolean> {
+    try {
+      await db.delete(concepts).where(eq(concepts.id, id));
+      return true;
+    } catch (error) {
+      console.error('Failed to delete concept:', error);
+      return false;
+    }
   }
 
   // AI Suggestion methods
   async getAiSuggestions(projectId: number): Promise<AiSuggestion[]> {
-    return Array.from(this.aiSuggestions.values()).filter(
-      (suggestion) => suggestion.projectId === projectId
-    );
+    return await db
+      .select()
+      .from(aiSuggestions)
+      .where(eq(aiSuggestions.projectId, projectId));
   }
 
   async getAiSuggestion(id: number): Promise<AiSuggestion | undefined> {
-    return this.aiSuggestions.get(id);
+    const [suggestion] = await db
+      .select()
+      .from(aiSuggestions)
+      .where(eq(aiSuggestions.id, id));
+    
+    return suggestion;
   }
 
   async createAiSuggestion(insertSuggestion: InsertAiSuggestion): Promise<AiSuggestion> {
-    const id = this.suggestionCurrentId++;
-    const suggestion: AiSuggestion = { 
-      ...insertSuggestion, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.aiSuggestions.set(id, suggestion);
+    const [suggestion] = await db
+      .insert(aiSuggestions)
+      .values(insertSuggestion)
+      .returning();
+    
     return suggestion;
   }
 
   async deleteAiSuggestion(id: number): Promise<boolean> {
-    return this.aiSuggestions.delete(id);
+    try {
+      await db.delete(aiSuggestions).where(eq(aiSuggestions.id, id));
+      return true;
+    } catch (error) {
+      console.error('Failed to delete AI suggestion:', error);
+      return false;
+    }
   }
 }
 
-export const storage = new MemStorage();
+// Import required Drizzle components and functions
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+
+export const storage = new DatabaseStorage();
