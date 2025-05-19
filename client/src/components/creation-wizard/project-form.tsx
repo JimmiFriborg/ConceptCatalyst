@@ -15,6 +15,30 @@ import { Separator } from "@/components/ui/separator";
 const projectSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
+  projectCategory: z.enum([
+    "game",
+    "tool", 
+    "business", 
+    "social", 
+    "education", 
+    "entertainment", 
+    "productivity", 
+    "health", 
+    "finance", 
+    "other"
+  ]).default("tool"),
+  baseCapabilities: z.array(z.enum([
+    "user_authentication",
+    "payment_processing",
+    "messaging",
+    "file_storage",
+    "ai_integration",
+    "data_visualization",
+    "social_sharing",
+    "search_functionality",
+    "notifications",
+    "analytics"
+  ])).default([]),
   mission: z.string().optional(),
   deadline: z.string().optional(),
   status: z.enum(["planning", "in-progress", "on-hold", "completed"]).default("planning"),
@@ -45,6 +69,8 @@ export function ProjectForm({ defaultValues, onSubmit, onBack }: ProjectFormProp
     defaultValues: {
       name: "",
       description: "",
+      projectCategory: "tool",
+      baseCapabilities: [],
       mission: "",
       deadline: "",
       status: "planning",
@@ -178,6 +204,91 @@ export function ProjectForm({ defaultValues, onSubmit, onBack }: ProjectFormProp
                 )}
               />
             </div>
+            
+            <FormField
+              control={form.control}
+              name="projectCategory"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="game">Game</SelectItem>
+                      <SelectItem value="tool">Tool</SelectItem>
+                      <SelectItem value="business">Business</SelectItem>
+                      <SelectItem value="social">Social</SelectItem>
+                      <SelectItem value="education">Education</SelectItem>
+                      <SelectItem value="entertainment">Entertainment</SelectItem>
+                      <SelectItem value="productivity">Productivity</SelectItem>
+                      <SelectItem value="health">Health</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    The high-level domain of your project helps AI provide more relevant suggestions
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="baseCapabilities"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Base Capabilities</FormLabel>
+                  <FormDescription className="mb-2">
+                    Select common features to include in this project
+                  </FormDescription>
+                  <FormControl>
+                    <div className="grid grid-cols-2 gap-2 border rounded-md p-3">
+                      {[
+                        { value: "user_authentication", label: "User Authentication" },
+                        { value: "payment_processing", label: "Payment Processing" },
+                        { value: "messaging", label: "Messaging" },
+                        { value: "file_storage", label: "File Storage" },
+                        { value: "ai_integration", label: "AI Integration" },
+                        { value: "data_visualization", label: "Data Visualization" },
+                        { value: "social_sharing", label: "Social Sharing" },
+                        { value: "search_functionality", label: "Search Functionality" },
+                        { value: "notifications", label: "Notifications" },
+                        { value: "analytics", label: "Analytics" }
+                      ].map((capability) => (
+                        <div 
+                          key={capability.value} 
+                          className={`flex items-center space-x-2 p-2 rounded ${
+                            field.value?.includes(capability.value) 
+                              ? 'bg-secondary text-secondary-foreground' 
+                              : 'hover:bg-secondary/30'
+                          } cursor-pointer transition-colors`}
+                          onClick={() => {
+                            const newValue = field.value?.includes(capability.value)
+                              ? field.value.filter(v => v !== capability.value)
+                              : [...(field.value || []), capability.value];
+                            field.onChange(newValue);
+                          }}
+                        >
+                          <div className={`w-4 h-4 rounded-full ${
+                            field.value?.includes(capability.value) 
+                              ? 'bg-primary' 
+                              : 'border border-input'
+                          }`}/>
+                          <span className="text-sm">{capability.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <div className="flex justify-between pt-2">
               {onBack && (

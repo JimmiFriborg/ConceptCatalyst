@@ -26,7 +26,7 @@ export const perspectiveEnum = z.enum([
 
 export type Perspective = z.infer<typeof perspectiveEnum>;
 
-// Category enum for feature categorization
+// Category enum for feature categorization (now used as priority)
 export const categoryEnum = z.enum([
   "mvp",
   "launch",
@@ -36,6 +36,38 @@ export const categoryEnum = z.enum([
 ]);
 
 export type Category = z.infer<typeof categoryEnum>;
+
+// Project categories - high-level domains
+export const projectCategoryEnum = z.enum([
+  "game",
+  "tool",
+  "business",
+  "social",
+  "education",
+  "entertainment",
+  "productivity",
+  "health",
+  "finance",
+  "other"
+]);
+
+export type ProjectCategory = z.infer<typeof projectCategoryEnum>;
+
+// Base capabilities that can be selected during project/concept creation
+export const baseCapabilityEnum = z.enum([
+  "user_authentication",
+  "payment_processing",
+  "messaging",
+  "file_storage",
+  "ai_integration",
+  "data_visualization",
+  "social_sharing",
+  "search_functionality",
+  "notifications",
+  "analytics"
+]);
+
+export type BaseCapability = z.infer<typeof baseCapabilityEnum>;
 
 // Projects table
 export const projects = pgTable("projects", {
