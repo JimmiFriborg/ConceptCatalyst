@@ -139,19 +139,29 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
     
     try {
       console.log(`Accepting suggestion ${suggestion.id} for project ${currentProjectId}`);
-      await acceptSuggestion(suggestion.id);
+      const result = await acceptSuggestion(suggestion.id);
+      
+      console.log("Feature created from suggestion:", result);
+      
+      // Update local state and ensure cache is refreshed
+      setFeatures((prevFeatures) => [...(prevFeatures || []), result]);
       
       // Refresh data
       queryClient.invalidateQueries({ 
         queryKey: [
-          `/api/projects/${currentProjectId}/features`,
+          `/api/projects/${currentProjectId}/features`
+        ] 
+      });
+      
+      queryClient.invalidateQueries({ 
+        queryKey: [
           `/api/projects/${currentProjectId}/ai/suggestions`
         ] 
       });
       
       toast({
-        title: "Suggestion accepted",
-        description: `"${suggestion.name}" has been added as a feature.`,
+        title: "Feature accepted",
+        description: `"${suggestion.name}" has been added to your project.`,
       });
     } catch (error) {
       console.error("Error accepting suggestion:", error);

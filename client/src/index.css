@@ -2,6 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix UI container overflow issues */
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Container fixes for mobile */
+.container-fix {
+  max-width: 100%;
+  overflow-x: hidden;
+  padding: 0 8px;
+}
+
+/* Category styling */
+.category-zone {
+  min-height: 300px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.category-zone-content {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Feature card fixes */
+.feature-card {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Fix text overflow */
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 20 14.3% 4.1%;
