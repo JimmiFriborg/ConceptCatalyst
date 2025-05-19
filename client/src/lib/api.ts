@@ -105,8 +105,17 @@ export async function deleteFeature(id: number): Promise<void> {
 
 // AI Suggestion endpoints
 export async function acceptSuggestion(id: number): Promise<void> {
-  await apiRequest<void>(`/api/ai/suggestions/${id}/accept`, 'POST');
-  queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+  // Get the suggestion first to know which project to invalidate
+  const result = await apiRequest<{projectId: number}>(`/api/ai/suggestions/${id}/accept`, 'POST');
+  const projectId = result.projectId;
+  
+  // Invalidate both project features and suggestions
+  queryClient.invalidateQueries({ 
+    queryKey: [
+      `/api/projects/${projectId}/features`,
+      `/api/projects/${projectId}/ai/suggestions`
+    ] 
+  });
 }
 
 export async function deleteSuggestion(id: number): Promise<void> {

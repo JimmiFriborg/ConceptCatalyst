@@ -27,16 +27,8 @@ import { generateFeatureSuggestions } from "@/lib/api";
 
 import { queryClient } from "@/lib/queryClient";
 
-// Temporary mock functions until API is fully implemented
-const acceptSuggestion = async (id: number) => {
-  console.log("Accepting suggestion:", id);
-  return Promise.resolve();
-};
-
-const deleteSuggestion = async (id: number) => {
-  console.log("Deleting suggestion:", id);
-  return Promise.resolve();
-};
+// API functions for suggestion management
+import { acceptSuggestion, deleteSuggestion } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface AiSuggestionsPanelProps {
@@ -97,10 +89,12 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
   type FilterPerspective = Perspective | "all";
   
   // Use the freshSuggestions data and filter by perspective
-  const filteredSuggestions = (freshSuggestions || []).filter(suggestion => {
-    // Handle both specific perspective and "all" filtering
-    return perspective === suggestion.perspective || perspective === "all";
-  });
+  const filteredSuggestions = Array.isArray(freshSuggestions) 
+    ? freshSuggestions.filter((suggestion: AiSuggestion) => {
+        // Handle both specific perspective and "all" filtering
+        return perspective === suggestion.perspective || perspective === "all";
+      })
+    : [];
 
   // Generate AI suggestions
   const handleRefreshSuggestions = async () => {
