@@ -244,19 +244,19 @@ export function UnifiedCreationWizard({
   const getStepDescription = () => {
     switch (currentStep) {
       case "type-selection":
-        return "Choose what you'd like to create. Concepts are for brainstorming, Projects are for implementation, Features are individual capabilities.";
+        return "Choose what type of item to create.";
       case "basic-info":
         return creationType === "concept"
-          ? "Define the basic concept information. This is the first step in your idea exploration."
-          : "Define the core project details. This will help set the foundation for implementation.";
+          ? "Enter the basic concept information."
+          : "Enter the core project details.";
       case "scope-definition":
-        return "Define what's in scope and out of scope for this project. Be specific to avoid scope creep.";
+        return "Define what's included and excluded.";
       case "constraint-definition":
-        return "Add any constraints or limitations that will impact this project.";
+        return "Add any limitations or requirements.";
       case "feature-details":
-        return "Define the feature's details and characteristics.";
+        return "Define the feature details.";
       case "import-options":
-        return "Import content from text or a file to quickly create projects or features.";
+        return "Import content from external sources.";
       case "review":
         return "Review your inputs before creating.";
       default:
