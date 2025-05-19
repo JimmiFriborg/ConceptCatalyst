@@ -6,6 +6,8 @@
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  padding: 0;
+  margin: 0;
 }
 
 /* Container fixes for mobile */
@@ -15,11 +17,26 @@ body {
   padding: 0 8px;
 }
 
+/* Main layout fixes */
+.layout-container {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Card content overflow handling */
+.card-content {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
 /* Category styling */
 .category-zone {
   min-height: 300px;
   max-width: 100%;
   overflow: hidden;
+  padding: 0.5rem;
 }
 
 .category-zone-content {
@@ -33,6 +50,22 @@ body {
   max-width: 100%;
   overflow-wrap: break-word;
   word-break: break-word;
+  box-sizing: border-box;
+}
+
+/* Improved mobile padding for components */
+@media (max-width: 640px) {
+  .mobile-padding {
+    padding: 0.5rem;
+  }
+  
+  .mobile-text {
+    font-size: 0.9rem;
+  }
+  
+  h1, h2, h3 {
+    word-wrap: break-word;
+  }
 }
 
 /* Fix text overflow */

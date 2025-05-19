@@ -327,11 +327,20 @@ export default function ProjectView({ id }: ProjectViewProps) {
       </div>
       
       {/* AI Suggestions Panel - now visible on all devices, with better containment */}
-      <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 sm:p-4">
+      <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 sm:p-4 max-w-full overflow-hidden">
         <div className="max-w-4xl mx-auto w-full">
           <h3 className="text-lg font-medium mb-4">AI Suggestions</h3>
-          <div className="overflow-x-hidden">
-            <AiSuggestionsPanel isLoading={isSuggestionsLoading} />
+          <div className="overflow-x-hidden max-w-full">
+            <AiSuggestionsPanel 
+              isLoading={isSuggestionsLoading}
+              onFeatureAdded={(newFeature) => {
+                console.log("Feature added from AI suggestion:", newFeature);
+                // Refresh features data
+                if (newFeature && id) {
+                  setFeatures(prev => Array.isArray(prev) ? [...prev, newFeature] : [newFeature]);
+                }
+              }}
+            />
           </div>
         </div>
       </div>

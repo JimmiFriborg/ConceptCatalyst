@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AiSuggestionsPanelProps {
   isLoading?: boolean;
+  onFeatureAdded?: (feature: any) => void;
 }
 
 // Map perspectives to readable names
@@ -77,7 +78,7 @@ const categoryNames: Record<Category, string> = {
   "rejected": "Rejected"
 };
 
-export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProps) {
+export function AiSuggestionsPanel({ isLoading = false, onFeatureAdded }: AiSuggestionsPanelProps) {
   const [perspective, setPerspective] = useState<Perspective | "all">("technical");
   const [isGenerating, setIsGenerating] = useState(false);
   const { currentProjectId, aiSuggestions } = useProject();
@@ -142,6 +143,11 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
       const createdFeature = await acceptSuggestion(suggestion.id);
       
       console.log("Feature created from suggestion:", createdFeature);
+      
+      // Call the onFeatureAdded callback if provided
+      if (onFeatureAdded && createdFeature) {
+        onFeatureAdded(createdFeature);
+      }
       
       // Refresh data after successful feature creation
       queryClient.invalidateQueries({ 
