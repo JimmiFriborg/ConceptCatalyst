@@ -225,9 +225,9 @@ export default function ProjectView({ id }: ProjectViewProps) {
         {/* Main working area */}
         <div className="flex-1 flex flex-col overflow-y-auto">
           {/* Current Feature Display */}
-          <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-visible">
-            <div className="py-6 px-4 sm:px-6 lg:px-8">
-              <div className="max-w-4xl mx-auto">
+          <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
+            <div className="py-4 px-2 sm:px-4 lg:px-6">
+              <div className="w-full max-w-4xl mx-auto">
                 {isFeaturesLoading ? (
                   <div className="space-y-4">
                     <Skeleton className="h-8 w-2/3" />
@@ -326,11 +326,13 @@ export default function ProjectView({ id }: ProjectViewProps) {
         </div>
       </div>
       
-      {/* AI Suggestions Panel - now visible on all devices */}
-      <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-        <div className="max-w-7xl mx-auto">
+      {/* AI Suggestions Panel - now visible on all devices, with better containment */}
+      <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 sm:p-4">
+        <div className="max-w-4xl mx-auto w-full">
           <h3 className="text-lg font-medium mb-4">AI Suggestions</h3>
-          <AiSuggestionsPanel isLoading={isSuggestionsLoading} />
+          <div className="overflow-x-hidden">
+            <AiSuggestionsPanel isLoading={isSuggestionsLoading} />
+          </div>
         </div>
       </div>
       
