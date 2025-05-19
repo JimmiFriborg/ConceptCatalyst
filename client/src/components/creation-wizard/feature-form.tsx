@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { useState } from "react";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { TagInput } from "@/components/ui/tag-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 // Form schema for features
 const featureSchema = z.object({
@@ -18,6 +20,9 @@ const featureSchema = z.object({
   userBenefit: z.string().optional(),
   implementationComplexity: z.enum(["low", "medium", "high"]).default("medium"),
   priority: z.enum(["low", "medium", "high"]).default("medium"),
+  isAiFeature: z.boolean().default(false),
+  aiCapabilities: z.array(z.string()).default([]),
+  aiIntegrationPoints: z.string().optional(),
   dependencies: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),
   enhanceWithAi: z.boolean().default(true),
@@ -38,6 +43,8 @@ export function FeatureForm({
   onBack,
   projectId 
 }: FeatureFormProps) {
+  const [showAiSection, setShowAiSection] = useState(false);
+  
   const form = useForm<FeatureFormData>({
     resolver: zodResolver(featureSchema),
     defaultValues: {
@@ -47,6 +54,9 @@ export function FeatureForm({
       userBenefit: "",
       implementationComplexity: "medium",
       priority: "medium",
+      isAiFeature: false,
+      aiCapabilities: [],
+      aiIntegrationPoints: "",
       dependencies: [],
       tags: [],
       enhanceWithAi: true,
@@ -221,6 +231,78 @@ export function FeatureForm({
               )}
             />
           </div>
+          
+          <FormField
+            control={form.control}
+            name="isAiFeature"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>AI Feature</FormLabel>
+                  <FormDescription>
+                    This feature involves AI capabilities or integration.
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      setShowAiSection(checked);
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          {showAiSection && (
+            <>
+              <Separator className="my-3" />
+              <FormField
+                control={form.control}
+                name="aiCapabilities"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>AI Capabilities</FormLabel>
+                    <FormControl>
+                      <TagInput
+                        placeholder="Add AI capability and press Enter"
+                        tags={field.value}
+                        setTags={(tags) => field.onChange(tags)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Specific AI capabilities this feature will implement (e.g., NLP, Image Recognition).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="aiIntegrationPoints"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>AI Integration Details</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe how AI will be integrated and used in this feature" 
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Technical details on how AI will be integrated and used.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Separator className="my-3" />
+            </>
+          )}
           
           <FormField
             control={form.control}

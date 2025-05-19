@@ -23,6 +23,9 @@ const projectSchema = z.object({
   outOfScope: z.array(z.string()).default([]),
   constraints: z.array(z.string()).default([]),
   technicalRequirements: z.string().optional(),
+  aiOptimized: z.boolean().default(false),
+  aiModelRequirements: z.string().optional(),
+  aiEthicalConsiderations: z.array(z.string()).default([]),
   enhanceWithAi: z.boolean().default(true),
 });
 
@@ -35,7 +38,7 @@ interface ProjectFormProps {
 }
 
 export function ProjectForm({ defaultValues, onSubmit, onBack }: ProjectFormProps) {
-  const [currentSection, setCurrentSection] = useState<'basic' | 'scope' | 'technical'>('basic');
+  const [currentSection, setCurrentSection] = useState<'basic' | 'scope' | 'technical' | 'ai'>('basic');
   
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
@@ -50,6 +53,9 @@ export function ProjectForm({ defaultValues, onSubmit, onBack }: ProjectFormProp
       outOfScope: [],
       constraints: [],
       technicalRequirements: "",
+      aiOptimized: false,
+      aiModelRequirements: "",
+      aiEthicalConsiderations: [],
       enhanceWithAi: true,
       ...defaultValues
     },
@@ -320,6 +326,100 @@ export function ProjectForm({ defaultValues, onSubmit, onBack }: ProjectFormProp
               )}
             />
             
+            <FormField
+              control={form.control}
+              name="aiOptimized"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>AI-Optimized Project</FormLabel>
+                    <FormDescription>
+                      This project involves AI development or integration.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        if (checked) {
+                          setCurrentSection('ai');
+                        }
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-between pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentSection('scope')}
+              >
+                Back
+              </Button>
+              {form.watch('aiOptimized') ? (
+                <Button
+                  type="button"
+                  onClick={() => setCurrentSection('ai')}
+                >
+                  Next
+                </Button>
+              ) : (
+                <Button type="submit">
+                  Create Project
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {currentSection === 'ai' && (
+          <div className="space-y-5">
+            <FormField
+              control={form.control}
+              name="aiModelRequirements"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>AI Model Requirements</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Specify required AI models, tokens, context sizes, etc." 
+                      className="min-h-[100px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Details about specific AI models, performance requirements, or API integrations.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="aiEthicalConsiderations"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ethical Considerations</FormLabel>
+                  <FormControl>
+                    <TagInput
+                      placeholder="Add ethical consideration and press Enter"
+                      tags={field.value}
+                      setTags={(tags) => field.onChange(tags)}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Ethical guidelines, safety measures, and responsible AI principles.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <Separator className="my-4" />
             
             <FormField
@@ -347,7 +447,7 @@ export function ProjectForm({ defaultValues, onSubmit, onBack }: ProjectFormProp
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setCurrentSection('scope')}
+                onClick={() => setCurrentSection('technical')}
               >
                 Back
               </Button>
