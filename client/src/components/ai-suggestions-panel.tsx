@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Bot,
   XIcon,
@@ -139,24 +139,17 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
     
     try {
       console.log(`Accepting suggestion ${suggestion.id} for project ${currentProjectId}`);
-      const result = await acceptSuggestion(suggestion.id);
+      const createdFeature = await acceptSuggestion(suggestion.id);
       
-      console.log("Feature created from suggestion:", result);
+      console.log("Feature created from suggestion:", createdFeature);
       
-      // Update local state and ensure cache is refreshed
-      setFeatures((prevFeatures) => [...(prevFeatures || []), result]);
-      
-      // Refresh data
+      // Refresh data after successful feature creation
       queryClient.invalidateQueries({ 
-        queryKey: [
-          `/api/projects/${currentProjectId}/features`
-        ] 
+        queryKey: [`/api/projects/${currentProjectId}/features`] 
       });
       
       queryClient.invalidateQueries({ 
-        queryKey: [
-          `/api/projects/${currentProjectId}/ai/suggestions`
-        ] 
+        queryKey: [`/api/projects/${currentProjectId}/ai/suggestions`] 
       });
       
       toast({
