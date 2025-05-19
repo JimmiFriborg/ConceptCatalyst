@@ -130,16 +130,13 @@ export function FrankensteinFeatureDialog({
   const saveAsConcept = async (concept: ConceptIdea) => {
     try {
       // Create a new concept (essentially a project with type concept)
-      const newConcept = await apiRequest("/api/concepts", {
-        method: "POST",
-        body: JSON.stringify({
-          name: concept.title,
-          description: concept.description,
-          frankensteinFeatures: concept.sourcedFeatures,
-          innovations: concept.innovations,
-          implementation: concept.implementation,
-          parentId: projectId
-        })
+      const newConcept = await apiRequest("/api/concepts", "POST", {
+        name: concept.title,
+        description: concept.description,
+        frankensteinFeatures: concept.sourcedFeatures,
+        innovations: concept.innovations,
+        implementation: concept.implementation,
+        parentId: projectId
       });
       
       toast({

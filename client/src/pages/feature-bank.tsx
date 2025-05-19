@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Database, Search, Filter, Tag, Plus } from "lucide-react";
+import { Database, Search, Filter, Tag, Plus, Braces } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FeatureCard } from "@/components/feature-card";
 import { Feature, perspectiveEnum, categoryEnum } from "@shared/schema";
+import { FrankensteinFeatureDialog } from "@/components/frankenstein-feature-dialog";
 
 export default function FeatureBank() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -72,6 +73,8 @@ export default function FeatureBank() {
     );
   };
 
+  const [isFrankensteinOpen, setIsFrankensteinOpen] = useState(false);
+  
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-6">
@@ -80,10 +83,16 @@ export default function FeatureBank() {
           <h1 className="text-2xl font-bold">Feature Bank</h1>
         </div>
         
-        <Button disabled>
-          <Plus className="mr-2 h-4 w-4" />
-          Add to Bank
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" disabled>
+            <Plus className="mr-2 h-4 w-4" />
+            Add to Bank
+          </Button>
+          <Button onClick={() => setIsFrankensteinOpen(true)}>
+            <Braces className="mr-2 h-4 w-4" />
+            Frankenstein Feature
+          </Button>
+        </div>
       </div>
       
       <Card className="mb-6">
@@ -244,6 +253,13 @@ export default function FeatureBank() {
           </Tabs>
         </CardContent>
       </Card>
+      
+      {/* Frankenstein Feature Dialog */}
+      <FrankensteinFeatureDialog
+        open={isFrankensteinOpen}
+        onOpenChange={setIsFrankensteinOpen}
+        projectId={0} // Default project ID, will be updated when selecting a target project
+      />
     </div>
   );
 }

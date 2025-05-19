@@ -49,25 +49,20 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              <span className="text-primary">Feature</span>Priority AI
-            </h1>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setIsImportProjectOpen(true)}>
-                <FileUp className="mr-2 h-4 w-4" />
-                Import Project
-              </Button>
-              <Button onClick={() => setIsAddProjectOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Project
-              </Button>
-            </div>
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsImportProjectOpen(true)}>
+              <FileUp className="mr-2 h-4 w-4" />
+              Import Project
+            </Button>
+            <Button onClick={() => setIsAddProjectOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Project
+            </Button>
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
