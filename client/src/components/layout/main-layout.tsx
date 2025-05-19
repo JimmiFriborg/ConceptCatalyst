@@ -66,10 +66,12 @@ export function MainLayout({ children }: MainLayoutProps) {
               </nav>
             </div>
             <div>
-              <Button onClick={() => setIsAddProjectOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Concept
-              </Button>
+              <Link href="/new">
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

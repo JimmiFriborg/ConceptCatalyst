@@ -410,7 +410,7 @@ export function UnifiedCreationWizard({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Button
           variant={creationType === "concept" ? "default" : "outline"} 
-          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-left"
+          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-center w-full"
           onClick={() => {
             setCreationType("concept");
             projectForm.setValue("type", "concept");
@@ -420,14 +420,14 @@ export function UnifiedCreationWizard({
             <Lightbulb className="h-6 w-6 text-blue-600 dark:text-blue-300" />
           </div>
           <div className="text-lg font-medium">Concept</div>
-          <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
-            Create a new concept for brainstorming and exploration before implementation planning.
+          <p className="text-sm font-normal text-gray-500 dark:text-gray-400 w-full break-words">
+            Create a new concept for brainstorming and exploration.
           </p>
         </Button>
         
         <Button
           variant={creationType === "project" ? "default" : "outline"} 
-          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-left"
+          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-center w-full"
           onClick={() => {
             setCreationType("project");
             projectForm.setValue("type", "project");
@@ -437,14 +437,14 @@ export function UnifiedCreationWizard({
             <Layers className="h-6 w-6 text-green-600 dark:text-green-300" />
           </div>
           <div className="text-lg font-medium">Project</div>
-          <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
-            Create an implementation-ready project with defined features, priorities and timelines.
+          <p className="text-sm font-normal text-gray-500 dark:text-gray-400 w-full break-words">
+            Create an implementation-ready project with features.
           </p>
         </Button>
         
         <Button
           variant={creationType === "feature" ? "default" : "outline"} 
-          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-left"
+          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-center w-full"
           onClick={() => {
             setCreationType("feature");
           }}
@@ -453,14 +453,14 @@ export function UnifiedCreationWizard({
             <FileCode className="h-6 w-6 text-purple-600 dark:text-purple-300" />
           </div>
           <div className="text-lg font-medium">Feature</div>
-          <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
-            Create an individual feature that can be added to projects or saved to your feature bank.
+          <p className="text-sm font-normal text-gray-500 dark:text-gray-400 w-full break-words">
+            Create a feature for projects or your feature bank.
           </p>
         </Button>
         
         <Button
           variant={creationType === "import" ? "default" : "outline"} 
-          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-left"
+          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-center w-full"
           onClick={() => {
             setCreationType("import");
           }}
@@ -469,8 +469,8 @@ export function UnifiedCreationWizard({
             <Upload className="h-6 w-6 text-amber-600 dark:text-amber-300" />
           </div>
           <div className="text-lg font-medium">Import</div>
-          <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
-            Import project data or features from text, files, or external sources.
+          <p className="text-sm font-normal text-gray-500 dark:text-gray-400 w-full break-words">
+            Import project data or features from external sources.
           </p>
         </Button>
       </div>
