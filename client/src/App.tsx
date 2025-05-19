@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import ProjectView from "@/pages/project-view";
+import ProjectViewTabs from "@/pages/project-view-tabs";
 import { ProjectProvider } from "@/context/project-context";
 import { MainLayout } from "@/components/layout/main-layout";
 
@@ -14,10 +15,10 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/projects/:id">
-        {params => <ProjectView id={parseInt(params.id)} />}
+        {params => <ProjectViewTabs id={parseInt(params.id)} />}
       </Route>
       <Route path="/concepts/:id">
-        {params => <ProjectView id={parseInt(params.id)} />}
+        {params => <ProjectViewTabs id={parseInt(params.id)} />}
       </Route>
       <Route path="/concepts" component={Dashboard} />
       <Route path="/projects" component={Dashboard} />
