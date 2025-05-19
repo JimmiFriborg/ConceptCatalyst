@@ -1,131 +1,100 @@
 import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocation } from "wouter";
-import { queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { createProject, createFeature } from "@/lib/api";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { 
-  FolderKanban, 
-  Lightbulb, 
-  Puzzle, 
-  FileUp, 
-  ArrowRight, 
-  Sparkles, 
-  AlertTriangle,
-  Info,
-  FileCode, 
-  User, 
-  ShieldCheck
-} from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { insertProjectSchema } from "@shared/schema";
+import { queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { ChevronRight, InfoIcon, Upload, Lightbulb, Layers, FileCode } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useLocation } from "wouter";
 
-// Creation types
-type CreationType = "concept" | "project" | "feature" | "import";
+// Define the different creation types that our wizard supports
+export type CreationType = "concept" | "project" | "feature" | "import";
 
-// Wizard schemas
-const projectSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().default(""),
-  mission: z.string().default(""),
-  primaryGoal: z.string().default(""),
-  secondaryGoals: z.string().optional().default(""),
-  inScope: z.string().default(""),
-  outOfScope: z.string().default(""),
-  constraints: z.string().optional().default(""),
-  generateSuggestions: z.boolean().default(true),
-  projectType: z.enum(["concept", "project"]).default("project"),
-});
-
-const featureSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
-  perspective: z.enum(["technical", "business", "ux", "security"]),
-  projectId: z.number().optional(),
-  enhanceWithAi: z.boolean().default(true),
-});
-
-const importSchema = z.object({
-  importType: z.enum(["project", "concept", "feature"]),
-  textContent: z.string().min(1, "Content is required"),
-  fileContent: z.any().optional(),
-  parseAsSingleItem: z.boolean().default(true),
-});
-
-type ProjectFormData = z.infer<typeof projectSchema>;
-type FeatureFormData = z.infer<typeof featureSchema>;
-type ImportFormData = z.infer<typeof importSchema>;
-
+// Props for our UnifiedCreationWizard component
 interface UnifiedCreationWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialType?: CreationType;
-  projectId?: number;
+  projectId?: number; // Optional project ID if we're creating a feature within a project
 }
 
-export function UnifiedCreationWizard({
-  open,
-  onOpenChange,
+// Step type for our multi-step wizard
+type WizardStep = 
+  | "type-selection" 
+  | "basic-info" 
+  | "scope-definition"
+  | "constraint-definition" 
+  | "feature-details"
+  | "import-options"
+  | "review";
+
+// Form schemas for different entity types
+const projectSchema = insertProjectSchema.extend({
+  type: z.enum(["concept", "project"]),
+  goals: z.array(z.string()).optional(),
+  inScope: z.array(z.string()).optional(),
+  outOfScope: z.array(z.string()).optional(),
+  constraints: z.array(z.string()).optional(),
+  enhanceWithAi: z.boolean().default(true),
+});
+
+const featureSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  perspective: z.enum(["technical", "business", "security", "ux"]),
+  enhanceWithAi: z.boolean().default(true),
+});
+
+const importSchema = z.object({
+  importType: z.enum(["project", "feature"]),
+  textContent: z.string().optional(),
+  fileContent: z.any().optional(),
+  parseAsSingleItem: z.boolean().default(true),
+});
+
+// Define our form data types
+type ProjectFormData = z.infer<typeof projectSchema>;
+type FeatureFormData = z.infer<typeof featureSchema>;
+type ImportFormData = z.infer<typeof importSchema>;
+
+export function UnifiedCreationWizard({ 
+  open, 
+  onOpenChange, 
   initialType = "concept",
-  projectId,
+  projectId 
 }: UnifiedCreationWizardProps) {
-  const [creationType, setCreationType] = useState<CreationType>(initialType);
-  const [step, setStep] = useState(1);
-  const [_, navigate] = useLocation();
   const { toast } = useToast();
-  const [submitting, setSubmitting] = useState(false);
+  const [_, navigate] = useLocation();
   
-  // Setup forms for different content types
+  // Track current wizard state
+  const [creationType, setCreationType] = useState<CreationType>(initialType);
+  const [currentStep, setCurrentStep] = useState<WizardStep>("type-selection");
+  
+  // Initialize our forms
   const projectForm = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
       name: "",
       description: "",
+      type: initialType as "concept" | "project",
       mission: "",
-      primaryGoal: "",
-      secondaryGoals: "",
-      inScope: "",
-      outOfScope: "",
-      constraints: "",
-      generateSuggestions: true,
-      projectType: initialType === "concept" ? "concept" : "project",
+      goals: [],
+      inScope: [],
+      outOfScope: [],
+      constraints: [],
+      enhanceWithAi: true,
     },
+    mode: "onChange",
   });
   
   const featureForm = useForm<FeatureFormData>({
@@ -134,9 +103,9 @@ export function UnifiedCreationWizard({
       name: "",
       description: "",
       perspective: "business",
-      projectId: projectId,
       enhanceWithAi: true,
     },
+    mode: "onChange",
   });
   
   const importForm = useForm<ImportFormData>({
@@ -153,589 +122,563 @@ export function UnifiedCreationWizard({
   // Handle dialog open/close and reset forms
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      setStep(1);
       projectForm.reset();
       featureForm.reset();
       importForm.reset();
+      setCurrentStep("type-selection");
     }
     onOpenChange(open);
   };
   
-  // Handle creation type change
-  const handleCreationTypeChange = (type: CreationType) => {
-    setCreationType(type);
-    setStep(1);
-  };
-  
-  // Submit handlers
-  const handleProjectSubmit = async (data: ProjectFormData) => {
-    try {
-      setSubmitting(true);
-      
-      // Process text fields into arrays
-      const goalsArray = [
-        data.primaryGoal,
-        ...(data.secondaryGoals ? 
-          data.secondaryGoals.split('\n').filter(Boolean) : [])
-      ];
-      
-      const inScopeArray = data.inScope.split('\n').filter(Boolean);
-      const outOfScopeArray = data.outOfScope.split('\n').filter(Boolean);
-      const constraintsArray = data.constraints ? 
-        data.constraints.split('\n').filter(Boolean) : [];
-      
-      // Create the project
-      const project = await createProject({
-        name: data.name,
-        description: data.description,
-        mission: data.mission,
-        goals: goalsArray,
-        inScope: inScopeArray,
-        outOfScope: outOfScopeArray,
-        constraints: constraintsArray
-      });
-      
-      // Update UI
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      toast({
-        title: `${data.projectType === "concept" ? "Concept" : "Project"} created`,
-        description: `Your ${data.projectType} has been created successfully.`
-      });
-      
-      // Close dialog
-      handleOpenChange(false);
-      
-      // Navigate to the new project
-      navigate(`/projects/${project.id}`);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: `Failed to create ${data.projectType}. Please try again.`,
-        variant: "destructive"
-      });
-    } finally {
-      setSubmitting(false);
+  // Handle moving to the next step in the wizard
+  const goToNextStep = () => {
+    if (creationType === "concept" || creationType === "project") {
+      switch (currentStep) {
+        case "type-selection":
+          setCurrentStep("basic-info");
+          break;
+        case "basic-info":
+          setCurrentStep("scope-definition");
+          break;
+        case "scope-definition":
+          setCurrentStep("constraint-definition");
+          break;
+        case "constraint-definition":
+          setCurrentStep("review");
+          break;
+        case "review":
+          handleSubmitProject();
+          break;
+      }
+    } else if (creationType === "feature") {
+      switch (currentStep) {
+        case "type-selection":
+          setCurrentStep("feature-details");
+          break;
+        case "feature-details":
+          setCurrentStep("review");
+          break;
+        case "review":
+          handleSubmitFeature();
+          break;
+      }
+    } else if (creationType === "import") {
+      switch (currentStep) {
+        case "type-selection":
+          setCurrentStep("import-options");
+          break;
+        case "import-options":
+          setCurrentStep("review");
+          break;
+        case "review":
+          handleSubmitImport();
+          break;
+      }
     }
   };
   
-  const handleFeatureSubmit = async (data: FeatureFormData) => {
+  // Handle going back to the previous step
+  const goToPreviousStep = () => {
+    if (creationType === "concept" || creationType === "project") {
+      switch (currentStep) {
+        case "basic-info":
+          setCurrentStep("type-selection");
+          break;
+        case "scope-definition":
+          setCurrentStep("basic-info");
+          break;
+        case "constraint-definition":
+          setCurrentStep("scope-definition");
+          break;
+        case "review":
+          setCurrentStep("constraint-definition");
+          break;
+      }
+    } else if (creationType === "feature") {
+      switch (currentStep) {
+        case "feature-details":
+          setCurrentStep("type-selection");
+          break;
+        case "review":
+          setCurrentStep("feature-details");
+          break;
+      }
+    } else if (creationType === "import") {
+      switch (currentStep) {
+        case "import-options":
+          setCurrentStep("type-selection");
+          break;
+        case "review":
+          setCurrentStep("import-options");
+          break;
+      }
+    }
+  };
+  
+  // Render the wizard title based on the current step and creation type
+  const getWizardTitle = () => {
+    if (currentStep === "type-selection") {
+      return "What would you like to create?";
+    }
+    
+    const typeLabels = {
+      concept: "Concept",
+      project: "Project",
+      feature: "Feature",
+      import: "Import"
+    };
+    
+    const stepLabels = {
+      "basic-info": "Basic Information",
+      "scope-definition": "Scope Definition",
+      "constraint-definition": "Constraints",
+      "feature-details": "Feature Details",
+      "import-options": "Import Options",
+      "review": "Review & Create"
+    };
+    
+    return `${typeLabels[creationType]}: ${stepLabels[currentStep]}`;
+  };
+  
+  // Get the description text for the current step
+  const getStepDescription = () => {
+    switch (currentStep) {
+      case "type-selection":
+        return "Choose what you'd like to create. Concepts are for brainstorming, Projects are for implementation, Features are individual capabilities.";
+      case "basic-info":
+        return creationType === "concept"
+          ? "Define the basic concept information. This is the first step in your idea exploration."
+          : "Define the core project details. This will help set the foundation for implementation.";
+      case "scope-definition":
+        return "Define what's in scope and out of scope for this project. Be specific to avoid scope creep.";
+      case "constraint-definition":
+        return "Add any constraints or limitations that will impact this project.";
+      case "feature-details":
+        return "Define the feature's details and characteristics.";
+      case "import-options":
+        return "Import content from text or a file to quickly create projects or features.";
+      case "review":
+        return "Review your inputs before creating.";
+      default:
+        return "";
+    }
+  };
+  
+  // Handle submissions
+  const handleSubmitProject = async () => {
     try {
-      setSubmitting(true);
+      const formData = projectForm.getValues();
       
-      if (!data.projectId) {
+      // Create appropriate payload based on form data
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        mission: formData.mission,
+        goals: formData.goals,
+        inScope: formData.inScope,
+        outOfScope: formData.outOfScope,
+        constraints: formData.constraints,
+      };
+      
+      // Make API request to create the project/concept
+      const response = await apiRequest("/api/projects", "POST", payload);
+      
+      // Show success toast
+      toast({
+        title: `${formData.type === "concept" ? "Concept" : "Project"} created!`,
+        description: `Your ${formData.type} "${formData.name}" has been created successfully.`,
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      
+      // Navigate to the newly created project
+      if (response.id) {
+        const path = formData.type === "concept" ? "/concepts" : "/projects";
+        navigate(`${path}/${response.id}`);
+      } else {
+        navigate("/");
+      }
+      
+      // Close the dialog
+      handleOpenChange(false);
+    } catch (error) {
+      console.error("Error creating project:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create project. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleSubmitFeature = async () => {
+    try {
+      if (!projectId) {
         toast({
           title: "Error",
-          description: "Please select a project for this feature.",
-          variant: "destructive"
+          description: "Project ID is required to create a feature.",
+          variant: "destructive",
         });
         return;
       }
       
-      // Create the feature
-      const feature = await createFeature({
-        name: data.name,
-        description: data.description,
-        perspective: data.perspective,
-        projectId: data.projectId,
+      const formData = featureForm.getValues();
+      
+      // Create appropriate payload
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        perspective: formData.perspective,
+      };
+      
+      // Make API request to create the feature
+      await apiRequest(`/api/projects/${projectId}/features`, {
+        method: "POST",
+        body: JSON.stringify(payload),
       });
       
-      // Update UI
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/projects/${data.projectId}/features`] 
-      });
+      // Show success toast
       toast({
-        title: "Feature created",
-        description: "Your feature has been created successfully."
+        title: "Feature created!",
+        description: `Your feature "${formData.name}" has been created successfully.`,
       });
       
-      // Close dialog
-      handleOpenChange(false);
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/features`] });
       
-      // Navigate if needed
-      if (feature.projectId) {
-        navigate(`/projects/${feature.projectId}`);
-      }
+      // Close the dialog
+      handleOpenChange(false);
     } catch (error) {
+      console.error("Error creating feature:", error);
       toast({
         title: "Error",
         description: "Failed to create feature. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    } finally {
-      setSubmitting(false);
     }
   };
   
-  const handleImportSubmit = async (data: ImportFormData) => {
+  const handleSubmitImport = async () => {
     try {
-      setSubmitting(true);
+      const formData = importForm.getValues();
       
-      // Implementation for import functionality will go here
-      // This would parse the text or file and create appropriate entities
-      
+      // Process the import data
+      // This would need to be implemented based on your import format and process
       toast({
-        title: "Import successful",
-        description: `Imported ${data.importType} content successfully.`
+        title: "Import started",
+        description: "Processing your import data...",
       });
       
-      // Close dialog
+      // For now, just close the dialog
       handleOpenChange(false);
     } catch (error) {
+      console.error("Error importing data:", error);
       toast({
         title: "Error",
-        description: `Failed to import ${data.importType}. Please check the format and try again.`,
-        variant: "destructive"
+        description: "Failed to import data. Please try again.",
+        variant: "destructive",
       });
-    } finally {
-      setSubmitting(false);
     }
   };
   
-  // Render creation type selection
-  const renderCreationTypeSelection = () => (
-    <div className="grid grid-cols-2 gap-4 my-4">
-      <Card 
-        className={`cursor-pointer hover:border-primary ${
-          creationType === "concept" ? "border-2 border-primary" : ""
-        }`}
-        onClick={() => handleCreationTypeChange("concept")}
-      >
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center text-lg">
-            <Lightbulb className="mr-2 h-5 w-5 text-amber-500" />
-            Concept
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CardDescription>
-            Early stage ideas for brainstorming and exploration. 
-            Not yet ready for development planning.
-          </CardDescription>
-        </CardContent>
-      </Card>
-      
-      <Card 
-        className={`cursor-pointer hover:border-primary ${
-          creationType === "project" ? "border-2 border-primary" : ""
-        }`}
-        onClick={() => handleCreationTypeChange("project")}
-      >
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center text-lg">
-            <FolderKanban className="mr-2 h-5 w-5 text-blue-500" />
-            Project
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CardDescription>
-            Implementation-ready initiatives with 
-            clear scope, goals, and development priorities.
-          </CardDescription>
-        </CardContent>
-      </Card>
-      
-      <Card 
-        className={`cursor-pointer hover:border-primary ${
-          creationType === "feature" ? "border-2 border-primary" : ""
-        }`}
-        onClick={() => handleCreationTypeChange("feature")}
-      >
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center text-lg">
-            <Puzzle className="mr-2 h-5 w-5 text-green-500" />
-            Feature
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CardDescription>
-            Individual functionality or component 
-            that belongs to a project or concept.
-          </CardDescription>
-        </CardContent>
-      </Card>
-      
-      <Card 
-        className={`cursor-pointer hover:border-primary ${
-          creationType === "import" ? "border-2 border-primary" : ""
-        }`}
-        onClick={() => handleCreationTypeChange("import")}
-      >
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center text-lg">
-            <FileUp className="mr-2 h-5 w-5 text-purple-500" />
-            Import
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CardDescription>
-            Import concepts, projects, or features 
-            from text or file content.
-          </CardDescription>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  // Render different content based on the current step
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case "type-selection":
+        return renderTypeSelection();
+      case "basic-info":
+        return renderBasicInfo();
+      case "scope-definition":
+        return renderScopeDefinition();
+      case "constraint-definition":
+        return renderConstraintDefinition();
+      case "feature-details":
+        return renderFeatureDetails();
+      case "import-options":
+        return renderImportOptions();
+      case "review":
+        return renderReview();
+      default:
+        return null;
+    }
+  };
   
-  // Render project form
-  const renderProjectForm = () => {
-    const isConceptMode = projectForm.watch("projectType") === "concept";
-    
-    const maxStep = isConceptMode ? 2 : 4;
-    
+  // Render the type selection step (first step)
+  const renderTypeSelection = () => {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Button
+          variant={creationType === "concept" ? "default" : "outline"} 
+          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-left"
+          onClick={() => {
+            setCreationType("concept");
+            projectForm.setValue("type", "concept");
+          }}
+        >
+          <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
+            <Lightbulb className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+          </div>
+          <div className="text-lg font-medium">Concept</div>
+          <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
+            Create a new concept for brainstorming and exploration before implementation planning.
+          </p>
+        </Button>
+        
+        <Button
+          variant={creationType === "project" ? "default" : "outline"} 
+          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-left"
+          onClick={() => {
+            setCreationType("project");
+            projectForm.setValue("type", "project");
+          }}
+        >
+          <div className="bg-green-100 dark:bg-green-900 p-3 rounded-full">
+            <Layers className="h-6 w-6 text-green-600 dark:text-green-300" />
+          </div>
+          <div className="text-lg font-medium">Project</div>
+          <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
+            Create an implementation-ready project with defined features, priorities and timelines.
+          </p>
+        </Button>
+        
+        <Button
+          variant={creationType === "feature" ? "default" : "outline"} 
+          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-left"
+          onClick={() => {
+            setCreationType("feature");
+          }}
+        >
+          <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
+            <FileCode className="h-6 w-6 text-purple-600 dark:text-purple-300" />
+          </div>
+          <div className="text-lg font-medium">Feature</div>
+          <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
+            Create an individual feature that can be added to projects or saved to your feature bank.
+          </p>
+        </Button>
+        
+        <Button
+          variant={creationType === "import" ? "default" : "outline"} 
+          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-left"
+          onClick={() => {
+            setCreationType("import");
+          }}
+        >
+          <div className="bg-amber-100 dark:bg-amber-900 p-3 rounded-full">
+            <Upload className="h-6 w-6 text-amber-600 dark:text-amber-300" />
+          </div>
+          <div className="text-lg font-medium">Import</div>
+          <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
+            Import project data or features from text, files, or external sources.
+          </p>
+        </Button>
+      </div>
+    );
+  };
+  
+  // Render the basic info step for projects and concepts
+  const renderBasicInfo = () => {
     return (
       <Form {...projectForm}>
-        <form onSubmit={projectForm.handleSubmit(handleProjectSubmit)}>
-          <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-2">
-            {/* Type selector */}
-            <FormField
-              control={projectForm.control}
-              name="projectType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="concept">
-                        <div className="flex items-center">
-                          <Lightbulb className="mr-2 h-4 w-4 text-amber-500" />
-                          <span>Concept (for brainstorming)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="project">
-                        <div className="flex items-center">
-                          <FolderKanban className="mr-2 h-4 w-4 text-blue-500" />
-                          <span>Project (implementation-ready)</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription className="flex items-center text-amber-600 mt-2">
-                    <Info className="h-4 w-4 mr-2" />
-                    {isConceptMode 
-                      ? "Concepts focus on capturing ideas without implementation details." 
-                      : "Projects include detailed planning for implementation."}
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
-            
-            <Separator />
-            
-            {/* Step 1: Basic Information */}
-            {step === 1 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Basic Information</h3>
-                <FormField
-                  control={projectForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{isConceptMode ? "Concept" : "Project"} Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder={`Enter ${isConceptMode ? "concept" : "project"} name`} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={projectForm.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          {...field} 
-                          placeholder={`Describe your ${isConceptMode ? "concept" : "project"}`}
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <FormField
+            control={projectForm.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder={creationType === "concept" ? "Enter concept name" : "Enter project name"} 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormDescription>
+                  A clear, concise name that describes your {creationType}.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
             )}
-            
-            {/* Step 2: Mission and Goals */}
-            {step === 2 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Mission and Goals</h3>
-                <FormField
-                  control={projectForm.control}
-                  name="mission"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Mission Statement</FormLabel>
-                      <FormDescription>
-                        Define the overarching purpose of your {isConceptMode ? "concept" : "project"}
-                      </FormDescription>
-                      <FormControl>
-                        <Textarea 
-                          {...field} 
-                          placeholder={`Enter ${isConceptMode ? "concept" : "project"} mission`}
-                          rows={3}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={projectForm.control}
-                  name="primaryGoal"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Primary Goal</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Enter main goal" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={projectForm.control}
-                  name="secondaryGoals"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Secondary Goals (optional)</FormLabel>
-                      <FormDescription>One goal per line</FormDescription>
-                      <FormControl>
-                        <Textarea 
-                          {...field} 
-                          placeholder="Enter secondary goals (one per line)"
-                          rows={3}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-            
-            {/* Step 3: Scope (Project only) */}
-            {step === 3 && !isConceptMode && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Project Scope</h3>
-                <FormField
-                  control={projectForm.control}
-                  name="inScope"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>In Scope</FormLabel>
-                      <FormDescription>What's included in this project? (one item per line)</FormDescription>
-                      <FormControl>
-                        <Textarea 
-                          {...field} 
-                          placeholder="What's included in this project?"
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={projectForm.control}
-                  name="outOfScope"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Out of Scope</FormLabel>
-                      <FormDescription>What's excluded from this project? (one item per line)</FormDescription>
-                      <FormControl>
-                        <Textarea 
-                          {...field} 
-                          placeholder="What's NOT included in this project?"
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={projectForm.control}
-                  name="constraints"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Constraints (optional)</FormLabel>
-                      <FormDescription>Any limitations to consider? (one per line)</FormDescription>
-                      <FormControl>
-                        <Textarea 
-                          {...field} 
-                          placeholder="Enter any constraints"
-                          rows={3}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-            
-            {/* Step 4: AI Suggestions (Project only) */}
-            {step === 4 && !isConceptMode && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">AI Suggestions</h3>
-                
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-6 rounded-lg border border-blue-100 dark:border-blue-800">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-blue-100 dark:bg-blue-800 p-2 rounded-full">
-                      <Sparkles className="w-6 h-6 text-blue-600 dark:text-blue-300" />
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-blue-700 dark:text-blue-300">AI Feature Suggestions</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        Our AI can analyze your project details and suggest potential features to consider.
-                      </p>
-                      
-                      <FormField
-                        control={projectForm.control}
-                        name="generateSuggestions"
-                        render={({ field }) => (
-                          <FormItem className="flex items-center justify-between p-3 border rounded-md mt-4">
-                            <FormLabel className="cursor-pointer">
-                              Generate AI feature suggestions
-                            </FormLabel>
-                            <FormControl>
-                              <Switch 
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-md">
-                        <div className="flex items-center">
-                          <AlertTriangle className="w-4 h-4 text-amber-500 mr-2" />
-                          <span className="text-xs text-amber-800 dark:text-amber-300">
-                            AI feature suggestions require an OpenAI API key
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg">
-                  <h3 className="font-medium mb-4">Project Summary</h3>
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <span className="font-medium">Project Name: </span>
-                      <span>{projectForm.getValues("name")}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Mission: </span>
-                      <span className="text-gray-600 dark:text-gray-400">{projectForm.getValues("mission")}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Primary Goal: </span>
-                      <span className="text-gray-600 dark:text-gray-400">{projectForm.getValues("primaryGoal")}</span>
-                    </div>
-                    
-                    <div>
-                      <span className="font-medium">In Scope: </span>
-                      <div className="mt-1 pl-2 space-y-1 text-gray-600 dark:text-gray-400">
-                        {projectForm.getValues("inScope").split("\n").filter(Boolean).map((item, i) => (
-                          <div key={i} className="flex items-baseline">
-                            <span className="mr-2">•</span>
-                            <span>{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          />
           
-          {/* Navigation */}
-          <DialogFooter className="mt-6">
-            <div className="flex w-full justify-between">
-              <div>
-                {step > 1 ? (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setStep(step - 1)}
-                    type="button"
-                    disabled={submitting}
-                  >
-                    Back
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setCreationType("concept")}
-                    type="button"
-                    disabled={submitting}
-                  >
-                    Change Type
-                  </Button>
-                )}
-              </div>
-              
-              <div>
-                {step < maxStep ? (
-                  <Button 
-                    onClick={() => setStep(step + 1)}
-                    type="button"
-                  >
-                    Next
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
-                ) : (
-                  <Button 
-                    type="submit"
-                    disabled={submitting}
-                  >
-                    {submitting ? "Creating..." : `Create ${isConceptMode ? "Concept" : "Project"}`}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </DialogFooter>
+          <FormField
+            control={projectForm.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder={creationType === "concept" ? "Describe your concept" : "Describe your project"} 
+                    className="min-h-[100px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormDescription>
+                  Provide a detailed description of your {creationType}'s purpose and goals.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={projectForm.control}
+            name="mission"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mission Statement</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Enter mission statement" 
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormDescription>
+                  A clear statement of what this {creationType} aims to achieve.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={projectForm.control}
+            name="enhanceWithAi"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">AI Enhancement</FormLabel>
+                  <FormDescription>
+                    Let our AI suggest improvements, identify gaps, and enhance your descriptions.
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
         </form>
       </Form>
     );
   };
   
-  // Render feature form
-  const renderFeatureForm = () => (
-    <Form {...featureForm}>
-      <form onSubmit={featureForm.handleSubmit(handleFeatureSubmit)}>
-        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-          <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
-            <div className="flex items-center gap-2 text-blue-800 dark:text-blue-300">
-              <Puzzle className="h-5 w-5" />
-              <h3 className="font-medium">Create New Feature</h3>
-            </div>
-            <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
-              Features are individual functionalities that belong to a project or concept.
+  // Render the scope definition step
+  const renderScopeDefinition = () => {
+    return (
+      <Form {...projectForm}>
+        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <div className="border p-4 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">Goals</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Define the primary goals and objectives for this {creationType}.
             </p>
+            
+            {/* Here you'd need to implement a dynamic list of goals */}
+            <div className="space-y-2">
+              <Input placeholder="Enter a goal and press Enter" />
+              <div className="flex flex-wrap gap-2">
+                {/* Example goal tags */}
+                <div className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm flex items-center">
+                  Example goal
+                  <button className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800">×</button>
+                </div>
+              </div>
+            </div>
           </div>
           
+          <div className="border p-4 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">In Scope</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Define what's included in the scope of this {creationType}.
+            </p>
+            
+            {/* Here you'd need to implement a dynamic list of in-scope items */}
+            <div className="space-y-2">
+              <Input placeholder="Enter an in-scope item and press Enter" />
+              <div className="flex flex-wrap gap-2">
+                {/* Example scope tags */}
+                <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm flex items-center">
+                  Example in-scope item
+                  <button className="ml-2 text-green-600 dark:text-green-400 hover:text-green-800">×</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border p-4 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">Out of Scope</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Define what's explicitly excluded from this {creationType}.
+            </p>
+            
+            {/* Here you'd need to implement a dynamic list of out-of-scope items */}
+            <div className="space-y-2">
+              <Input placeholder="Enter an out-of-scope item and press Enter" />
+              <div className="flex flex-wrap gap-2">
+                {/* Example out-of-scope tags */}
+                <div className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-3 py-1 rounded-full text-sm flex items-center">
+                  Example out-of-scope item
+                  <button className="ml-2 text-red-600 dark:text-red-400 hover:text-red-800">×</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </Form>
+    );
+  };
+  
+  // Render the constraints definition step
+  const renderConstraintDefinition = () => {
+    return (
+      <Form {...projectForm}>
+        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <div className="border p-4 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">Constraints</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Define any limitations, restrictions, or boundaries for this {creationType}.
+            </p>
+            
+            {/* Here you'd need to implement a dynamic list of constraints */}
+            <div className="space-y-2">
+              <Input placeholder="Enter a constraint and press Enter" />
+              <div className="flex flex-wrap gap-2">
+                {/* Example constraint tags */}
+                <div className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full text-sm flex items-center">
+                  Example constraint
+                  <button className="ml-2 text-amber-600 dark:text-amber-400 hover:text-amber-800">×</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg flex gap-3">
+            <InfoIcon className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium text-blue-700 dark:text-blue-300">Why define constraints?</h4>
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                Constraints help set realistic expectations and identify potential challenges early.
+                Examples include budget limitations, technical constraints, time restrictions, or compliance requirements.
+              </p>
+            </div>
+          </div>
+        </form>
+      </Form>
+    );
+  };
+  
+  // Render the feature details step
+  const renderFeatureDetails = () => {
+    return (
+      <Form {...featureForm}>
+        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
           <FormField
             control={featureForm.control}
             name="name"
@@ -743,8 +686,11 @@ export function UnifiedCreationWizard({
               <FormItem>
                 <FormLabel>Feature Name</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Enter feature name" />
+                  <Input placeholder="Enter feature name" {...field} />
                 </FormControl>
+                <FormDescription>
+                  A clear, concise name that describes your feature.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -758,11 +704,14 @@ export function UnifiedCreationWizard({
                 <FormLabel>Description</FormLabel>
                 <FormControl>
                   <Textarea 
+                    placeholder="Describe the feature in detail" 
+                    className="min-h-[100px]"
                     {...field} 
-                    placeholder="Describe what this feature does and why it matters"
-                    rows={4}
                   />
                 </FormControl>
+                <FormDescription>
+                  Provide a detailed description of the feature's functionality and purpose.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -774,45 +723,22 @@ export function UnifiedCreationWizard({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Perspective</FormLabel>
+                <div className="grid grid-cols-4 gap-3">
+                  {["technical", "business", "security", "ux"].map((perspective) => (
+                    <Button
+                      key={perspective}
+                      type="button"
+                      variant={field.value === perspective ? "default" : "outline"}
+                      className="capitalize"
+                      onClick={() => featureForm.setValue("perspective", perspective as any)}
+                    >
+                      {perspective}
+                    </Button>
+                  ))}
+                </div>
                 <FormDescription>
-                  Choose the primary perspective this feature addresses
+                  Select the primary perspective for this feature.
                 </FormDescription>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select perspective" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="business">
-                      <div className="flex items-center">
-                        <User className="mr-2 h-4 w-4 text-amber-500" />
-                        <span>Business</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="technical">
-                      <div className="flex items-center">
-                        <FileCode className="mr-2 h-4 w-4 text-blue-500" />
-                        <span>Technical</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="ux">
-                      <div className="flex items-center">
-                        <User className="mr-2 h-4 w-4 text-green-500" />
-                        <span>UX/UI</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="security">
-                      <div className="flex items-center">
-                        <ShieldCheck className="mr-2 h-4 w-4 text-red-500" />
-                        <span>Security</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -822,99 +748,54 @@ export function UnifiedCreationWizard({
             control={featureForm.control}
             name="enhanceWithAi"
             render={({ field }) => (
-              <FormItem className="flex items-center justify-between p-3 border rounded-md">
-                <div>
-                  <FormLabel className="cursor-pointer">Enhance with AI</FormLabel>
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">AI Enhancement</FormLabel>
                   <FormDescription>
-                    Let AI refine and improve your feature description
+                    Let our AI suggest improvements, identify gaps, and enhance your feature description.
                   </FormDescription>
                 </div>
                 <FormControl>
-                  <Switch 
+                  <Switch
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
-        </div>
-        
-        <DialogFooter className="mt-6">
-          <div className="flex w-full justify-between">
-            <Button 
-              variant="outline" 
-              onClick={() => setCreationType("concept")}
-              type="button"
-              disabled={submitting}
-            >
-              Change Type
-            </Button>
-            
-            <Button 
-              type="submit"
-              disabled={submitting}
-            >
-              {submitting ? "Creating..." : "Create Feature"}
-            </Button>
-          </div>
-        </DialogFooter>
-      </form>
-    </Form>
-  );
+        </form>
+      </Form>
+    );
+  };
   
-  // Render import form
-  const renderImportForm = () => (
-    <Form {...importForm}>
-      <form onSubmit={importForm.handleSubmit(handleImportSubmit)}>
-        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-          <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-lg border border-purple-100 dark:border-purple-800">
-            <div className="flex items-center gap-2 text-purple-800 dark:text-purple-300">
-              <FileUp className="h-5 w-5" />
-              <h3 className="font-medium">Import Content</h3>
-            </div>
-            <p className="text-sm text-purple-600 dark:text-purple-400 mt-2">
-              Import concepts, projects, or features from text or file content.
-            </p>
-          </div>
-          
+  // Render the import options step
+  const renderImportOptions = () => {
+    return (
+      <Form {...importForm}>
+        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
           <FormField
             control={importForm.control}
             name="importType"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Import Type</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="concept">
-                      <div className="flex items-center">
-                        <Lightbulb className="mr-2 h-4 w-4 text-amber-500" />
-                        <span>Concept</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="project">
-                      <div className="flex items-center">
-                        <FolderKanban className="mr-2 h-4 w-4 text-blue-500" />
-                        <span>Project</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="feature">
-                      <div className="flex items-center">
-                        <Puzzle className="mr-2 h-4 w-4 text-green-500" />
-                        <span>Features</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-2 gap-3">
+                  {["project", "feature"].map((type) => (
+                    <Button
+                      key={type}
+                      type="button"
+                      variant={field.value === type ? "default" : "outline"}
+                      className="capitalize"
+                      onClick={() => importForm.setValue("importType", type as any)}
+                    >
+                      {type}
+                    </Button>
+                  ))}
+                </div>
+                <FormDescription>
+                  Select what you want to import.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -925,17 +806,17 @@ export function UnifiedCreationWizard({
             name="textContent"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Content</FormLabel>
-                <FormDescription>
-                  Paste text to import as {importForm.watch("importType")}
-                </FormDescription>
+                <FormLabel>Import Text</FormLabel>
                 <FormControl>
                   <Textarea 
+                    placeholder="Paste your text content here" 
+                    className="min-h-[150px]"
                     {...field} 
-                    placeholder={`Paste your ${importForm.watch("importType")} content here`}
-                    rows={10}
                   />
                 </FormControl>
+                <FormDescription>
+                  Paste the content you want to import.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -945,66 +826,233 @@ export function UnifiedCreationWizard({
             control={importForm.control}
             name="parseAsSingleItem"
             render={({ field }) => (
-              <FormItem className="flex items-center justify-between p-3 border rounded-md">
-                <div>
-                  <FormLabel className="cursor-pointer">Import as single item</FormLabel>
-                  <FormDescription>
-                    {importForm.watch("importType") === "feature" 
-                      ? "Parse as a single feature vs. multiple features"
-                      : "Import as one complete entity"}
-                  </FormDescription>
-                </div>
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                 <FormControl>
-                  <Switch 
+                  <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <FormMessage />
+                <div className="space-y-1 leading-none">
+                  <FormLabel>
+                    Parse as a single item
+                  </FormLabel>
+                  <FormDescription>
+                    If unchecked, we'll try to detect multiple items in your import.
+                  </FormDescription>
+                </div>
               </FormItem>
             )}
           />
-        </div>
-        
-        <DialogFooter className="mt-6">
-          <div className="flex w-full justify-between">
-            <Button 
-              variant="outline" 
-              onClick={() => setCreationType("concept")}
-              type="button"
-              disabled={submitting}
-            >
-              Change Type
-            </Button>
-            
-            <Button 
-              type="submit"
-              disabled={submitting}
-            >
-              {submitting ? "Importing..." : `Import ${importForm.watch("importType")}`}
-            </Button>
-          </div>
-        </DialogFooter>
-      </form>
-    </Form>
-  );
+        </form>
+      </Form>
+    );
+  };
   
-  // Main render
+  // Render the review step
+  const renderReview = () => {
+    // Depending on the creation type, show different review content
+    if (creationType === "concept" || creationType === "project") {
+      const formData = projectForm.getValues();
+      return (
+        <div className="space-y-6">
+          <div className="rounded-lg border p-4">
+            <h3 className="font-medium">Basic Information</h3>
+            <dl className="mt-2 divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Name</dt>
+                <dd className="col-span-2">{formData.name || "Not provided"}</dd>
+              </div>
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Description</dt>
+                <dd className="col-span-2 whitespace-pre-line">{formData.description || "Not provided"}</dd>
+              </div>
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Mission</dt>
+                <dd className="col-span-2 whitespace-pre-line">{formData.mission || "Not provided"}</dd>
+              </div>
+            </dl>
+          </div>
+          
+          <div className="rounded-lg border p-4">
+            <h3 className="font-medium">Scope & Constraints</h3>
+            <dl className="mt-2 divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Goals</dt>
+                <dd className="col-span-2">
+                  {formData.goals && formData.goals.length > 0 
+                    ? formData.goals.map((goal, idx) => (
+                        <div key={idx} className="mb-1">{goal}</div>
+                      ))
+                    : "No goals defined"
+                  }
+                </dd>
+              </div>
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">In Scope</dt>
+                <dd className="col-span-2">
+                  {formData.inScope && formData.inScope.length > 0 
+                    ? formData.inScope.map((item, idx) => (
+                        <div key={idx} className="mb-1">{item}</div>
+                      ))
+                    : "No in-scope items defined"
+                  }
+                </dd>
+              </div>
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Out of Scope</dt>
+                <dd className="col-span-2">
+                  {formData.outOfScope && formData.outOfScope.length > 0 
+                    ? formData.outOfScope.map((item, idx) => (
+                        <div key={idx} className="mb-1">{item}</div>
+                      ))
+                    : "No out-of-scope items defined"
+                  }
+                </dd>
+              </div>
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Constraints</dt>
+                <dd className="col-span-2">
+                  {formData.constraints && formData.constraints.length > 0 
+                    ? formData.constraints.map((item, idx) => (
+                        <div key={idx} className="mb-1">{item}</div>
+                      ))
+                    : "No constraints defined"
+                  }
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      );
+    } else if (creationType === "feature") {
+      const formData = featureForm.getValues();
+      return (
+        <div className="space-y-6">
+          <div className="rounded-lg border p-4">
+            <h3 className="font-medium">Feature Details</h3>
+            <dl className="mt-2 divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Name</dt>
+                <dd className="col-span-2">{formData.name || "Not provided"}</dd>
+              </div>
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Description</dt>
+                <dd className="col-span-2 whitespace-pre-line">{formData.description || "Not provided"}</dd>
+              </div>
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Perspective</dt>
+                <dd className="col-span-2 capitalize">{formData.perspective || "Not provided"}</dd>
+              </div>
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">AI Enhancement</dt>
+                <dd className="col-span-2">{formData.enhanceWithAi ? "Enabled" : "Disabled"}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      );
+    } else if (creationType === "import") {
+      const formData = importForm.getValues();
+      return (
+        <div className="space-y-6">
+          <div className="rounded-lg border p-4">
+            <h3 className="font-medium">Import Details</h3>
+            <dl className="mt-2 divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Import Type</dt>
+                <dd className="col-span-2 capitalize">{formData.importType || "Not provided"}</dd>
+              </div>
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Parse As Single Item</dt>
+                <dd className="col-span-2">{formData.parseAsSingleItem ? "Yes" : "No"}</dd>
+              </div>
+              <div className="py-2 grid grid-cols-3 gap-4">
+                <dt className="text-gray-500 dark:text-gray-400">Content Preview</dt>
+                <dd className="col-span-2 whitespace-pre-line text-sm">
+                  {formData.textContent 
+                    ? (formData.textContent.length > 200 
+                        ? formData.textContent.substring(0, 200) + "..." 
+                        : formData.textContent)
+                    : "No content provided"
+                  }
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
+  };
+  
+  // Determine if we can proceed to the next step
+  const canProceed = () => {
+    if (currentStep === "type-selection") {
+      return true; // We always have a creation type selected
+    }
+    
+    if (creationType === "concept" || creationType === "project") {
+      switch (currentStep) {
+        case "basic-info":
+          return projectForm.getValues("name").length >= 3 && projectForm.getValues("description").length >= 10;
+        case "scope-definition":
+        case "constraint-definition":
+          return true; // These are optional
+        case "review":
+          return true;
+      }
+    } else if (creationType === "feature") {
+      switch (currentStep) {
+        case "feature-details":
+          return featureForm.getValues("name").length >= 3 && featureForm.getValues("description").length >= 10;
+        case "review":
+          return true;
+      }
+    } else if (creationType === "import") {
+      switch (currentStep) {
+        case "import-options":
+          return importForm.getValues("textContent")?.length > 0 || importForm.getValues("fileContent");
+        case "review":
+          return true;
+      }
+    }
+    
+    return false;
+  };
+  
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Add New</DialogTitle>
-          <DialogDescription>
-            Select what you want to create
-          </DialogDescription>
+          <DialogTitle>{getWizardTitle()}</DialogTitle>
+          <DialogDescription>{getStepDescription()}</DialogDescription>
         </DialogHeader>
         
-        {/* Show selection or form based on state */}
-        {creationType === "concept" && renderCreationTypeSelection()}
-        {creationType === "project" && renderProjectForm()}
-        {creationType === "feature" && renderFeatureForm()}
-        {creationType === "import" && renderImportForm()}
+        <div className="py-4">
+          {renderStepContent()}
+        </div>
+        
+        <DialogFooter className="flex justify-between items-center">
+          <div>
+            {currentStep !== "type-selection" && (
+              <Button 
+                variant="outline" 
+                onClick={goToPreviousStep}
+              >
+                Back
+              </Button>
+            )}
+          </div>
+          <Button 
+            onClick={goToNextStep}
+            disabled={!canProceed()}
+          >
+            {currentStep === "review" ? "Create" : "Next"}
+            {currentStep !== "review" && <ChevronRight className="ml-2 h-4 w-4" />}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
