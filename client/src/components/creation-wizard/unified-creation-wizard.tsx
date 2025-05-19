@@ -410,67 +410,67 @@ export function UnifiedCreationWizard({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Button
           variant={creationType === "concept" ? "default" : "outline"} 
-          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-center w-full"
+          className="h-auto p-4 flex flex-col items-center justify-center gap-2 text-center w-full overflow-hidden"
           onClick={() => {
             setCreationType("concept");
             projectForm.setValue("type", "concept");
           }}
         >
-          <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
-            <Lightbulb className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+          <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full">
+            <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-300" />
           </div>
-          <div className="text-lg font-medium">Concept</div>
-          <p className="text-sm font-normal text-gray-500 dark:text-gray-400 w-full break-words">
-            Create a new concept for brainstorming and exploration.
+          <div className="text-md font-medium">Concept</div>
+          <p className="text-xs font-normal text-gray-500 dark:text-gray-400 w-full truncate px-2">
+            Brainstorming ideas
           </p>
         </Button>
         
         <Button
           variant={creationType === "project" ? "default" : "outline"} 
-          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-center w-full"
+          className="h-auto p-4 flex flex-col items-center justify-center gap-2 text-center w-full overflow-hidden"
           onClick={() => {
             setCreationType("project");
             projectForm.setValue("type", "project");
           }}
         >
-          <div className="bg-green-100 dark:bg-green-900 p-3 rounded-full">
-            <Layers className="h-6 w-6 text-green-600 dark:text-green-300" />
+          <div className="bg-green-100 dark:bg-green-900 p-2 rounded-full">
+            <Layers className="h-5 w-5 text-green-600 dark:text-green-300" />
           </div>
-          <div className="text-lg font-medium">Project</div>
-          <p className="text-sm font-normal text-gray-500 dark:text-gray-400 w-full break-words">
-            Create an implementation-ready project with features.
+          <div className="text-md font-medium">Project</div>
+          <p className="text-xs font-normal text-gray-500 dark:text-gray-400 w-full truncate px-2">
+            Implementation-ready
           </p>
         </Button>
         
         <Button
           variant={creationType === "feature" ? "default" : "outline"} 
-          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-center w-full"
+          className="h-auto p-4 flex flex-col items-center justify-center gap-2 text-center w-full overflow-hidden"
           onClick={() => {
             setCreationType("feature");
           }}
         >
-          <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
-            <FileCode className="h-6 w-6 text-purple-600 dark:text-purple-300" />
+          <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full">
+            <FileCode className="h-5 w-5 text-purple-600 dark:text-purple-300" />
           </div>
-          <div className="text-lg font-medium">Feature</div>
-          <p className="text-sm font-normal text-gray-500 dark:text-gray-400 w-full break-words">
-            Create a feature for projects or your feature bank.
+          <div className="text-md font-medium">Feature</div>
+          <p className="text-xs font-normal text-gray-500 dark:text-gray-400 w-full truncate px-2">
+            Individual capability
           </p>
         </Button>
         
         <Button
           variant={creationType === "import" ? "default" : "outline"} 
-          className="h-auto p-6 flex flex-col items-center justify-center gap-3 text-center w-full"
+          className="h-auto p-4 flex flex-col items-center justify-center gap-2 text-center w-full overflow-hidden"
           onClick={() => {
             setCreationType("import");
           }}
         >
-          <div className="bg-amber-100 dark:bg-amber-900 p-3 rounded-full">
-            <Upload className="h-6 w-6 text-amber-600 dark:text-amber-300" />
+          <div className="bg-amber-100 dark:bg-amber-900 p-2 rounded-full">
+            <Upload className="h-5 w-5 text-amber-600 dark:text-amber-300" />
           </div>
-          <div className="text-lg font-medium">Import</div>
-          <p className="text-sm font-normal text-gray-500 dark:text-gray-400 w-full break-words">
-            Import project data or features from external sources.
+          <div className="text-md font-medium">Import</div>
+          <p className="text-xs font-normal text-gray-500 dark:text-gray-400 w-full truncate px-2">
+            From external sources
           </p>
         </Button>
       </div>
