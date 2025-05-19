@@ -146,8 +146,8 @@ export default function ProjectView({ id }: ProjectViewProps) {
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Top Navigation */}
-        <div className="flex justify-between items-center h-16 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center">
+        <div className="flex flex-wrap justify-between items-center border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center mb-2 sm:mb-0">
             {/* Mobile menu */}
             <Sheet>
               <SheetTrigger asChild className="md:hidden">
@@ -174,41 +174,50 @@ export default function ProjectView({ id }: ProjectViewProps) {
               <Skeleton className="h-8 w-48" />
             ) : (
               <div className="flex items-center">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[140px] sm:max-w-xs">
                   {project?.name}
                 </h2>
-                <Badge className="ml-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                  Active
-                </Badge>
+                {project?.isConcept ? (
+                  <Badge className="ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                    Concept
+                  </Badge>
+                ) : (
+                  <Badge className="ml-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                    Active
+                  </Badge>
+                )}
               </div>
             )}
           </div>
           
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap gap-2">
             <Button 
-              variant="outline" 
+              variant="outline"
+              size="sm"
               onClick={() => setShowVisualization(!showVisualization)}
             >
-              <BarChart2 className="mr-2 h-4 w-4" />
-              {showVisualization ? "Hide Visualization" : "Show Visualization"}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleExport}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export
+              <BarChart2 className="mr-1 h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">{showVisualization ? "Hide Chart" : "Show Chart"}</span>
             </Button>
             <Button 
               variant="outline"
+              size="sm"
+              onClick={handleExport}
+            >
+              <Download className="mr-1 h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+            <Button 
+              variant="outline"
+              size="sm"
               onClick={() => setIsAiSuggestionDialogOpen(true)}
             >
-              <Zap className="mr-2 h-4 w-4" />
-              AI Suggestions
+              <Zap className="mr-1 h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">AI Suggestions</span>
             </Button>
-            <Button onClick={() => setIsAddFeatureOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Feature
+            <Button size="sm" onClick={() => setIsAddFeatureOpen(true)}>
+              <PlusCircle className="mr-1 h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Feature</span>
             </Button>
           </div>
         </div>
@@ -317,10 +326,13 @@ export default function ProjectView({ id }: ProjectViewProps) {
         </div>
       </div>
       
-      {/* AI Suggestions Panel - hidden on mobile */}
-      {!isMobile && (
-        <AiSuggestionsPanel isLoading={isSuggestionsLoading} />
-      )}
+      {/* AI Suggestions Panel - now visible on all devices */}
+      <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+        <div className="max-w-7xl mx-auto">
+          <h3 className="text-lg font-medium mb-4">AI Suggestions</h3>
+          <AiSuggestionsPanel isLoading={isSuggestionsLoading} />
+        </div>
+      </div>
       
       {/* Branch Projects Section */}
       {!isMobile && (
