@@ -1,13 +1,10 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
 import { useProjects } from "@/context/project-context";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-// Using a simplified wizard with direct form inputs
-import { SimpleProjectWizard } from "@/components/simple-project-wizard";
-import { ImportProjectDialog } from "@/components/import-project-dialog";
-import { PlusCircle, FolderOpen, Folder, Clock, ArrowRight, FileUp } from "lucide-react";
+import { UnifiedCreateMenu } from "@/components/unified-create-menu";
+import { FolderOpen, Folder, Clock, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { deleteProject } from "@/lib/api";
@@ -17,8 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 export default function Dashboard() {
   const [location, navigate] = useLocation();
   const { data: projects, isLoading, isError } = useProjects();
-  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
-  const [isImportProjectOpen, setIsImportProjectOpen] = useState(false);
   const { toast } = useToast();
   
   // Determine if we're showing concepts or projects based on the URL
@@ -52,14 +47,7 @@ export default function Dashboard() {
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsImportProjectOpen(true)}>
-              <FileUp className="mr-2 h-4 w-4" />
-              Import Project
-            </Button>
-            <Button onClick={() => setIsAddProjectOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Project
-            </Button>
+            <UnifiedCreateMenu />
           </div>
         </div>
       </div>
@@ -139,10 +127,7 @@ export default function Dashboard() {
                     Create your first project to start prioritizing features and planning your product roadmap.
                   </p>
                 </div>
-                <Button onClick={() => setIsAddProjectOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create New Project
-                </Button>
+                <UnifiedCreateMenu />
               </div>
             </Card>
           )}
@@ -184,15 +169,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      <SimpleProjectWizard
-        open={isAddProjectOpen}
-        onOpenChange={setIsAddProjectOpen}
-      />
-      
-      <ImportProjectDialog
-        open={isImportProjectOpen}
-        onOpenChange={setIsImportProjectOpen}
-      />
+
     </div>
   );
 }
