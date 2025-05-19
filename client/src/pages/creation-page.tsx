@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { CreationType, UnifiedCreationWizard } from "@/components/creation-wizard/unified-creation-wizard";
+import { CreationType, EnhancedCreationWizard } from "@/components/creation-wizard/enhanced-creation-wizard";
 import { RouteComponentProps } from "wouter";
 
 // This component will be directly used by Wouter
@@ -25,12 +25,17 @@ export default function CreationPage({ params }: RouteComponentProps) {
     ? typeFromParams as CreationType 
     : "concept";
   
+  // Get projectId from URL if available for feature creation
+  const searchParams = new URLSearchParams(window.location.search);
+  const projectId = searchParams.get('projectId') ? parseInt(searchParams.get('projectId')!) : undefined;
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <UnifiedCreationWizard 
+      <EnhancedCreationWizard 
         open={isOpen} 
         onOpenChange={handleOpenChange}
         initialType={initialType}
+        projectId={projectId}
       />
     </div>
   );
