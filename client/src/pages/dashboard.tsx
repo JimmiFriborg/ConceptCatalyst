@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UnifiedCreateMenu } from "@/components/unified-create-menu";
-import { FolderOpen, Folder, Clock, ArrowRight } from "lucide-react";
+import { FolderOpen, Folder, Clock, ArrowRight, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { deleteProject } from "@/lib/api";
@@ -47,7 +47,10 @@ export default function Dashboard() {
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-end gap-3">
-            <UnifiedCreateMenu />
+            <Button onClick={() => navigate("/new")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add
+            </Button>
           </div>
         </div>
       </div>
@@ -127,7 +130,10 @@ export default function Dashboard() {
                     Create your first project to start prioritizing features and planning your product roadmap.
                   </p>
                 </div>
-                <UnifiedCreateMenu />
+                <Button onClick={() => navigate("/new")}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add
+                </Button>
               </div>
             </Card>
           )}

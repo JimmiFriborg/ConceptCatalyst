@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,60 +8,55 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Lightbulb, FolderKanban, FileUp, FileCode } from "lucide-react";
-import { SimpleProjectWizard } from "@/components/simple-project-wizard";
-import { ImportProjectDialog } from "@/components/import-project-dialog";
+import { Plus, Lightbulb, FolderKanban, Puzzle, FileUp } from "lucide-react";
+import { UnifiedCreationWizard } from "@/components/creation-wizard/unified-creation-wizard";
 
-export function UnifiedCreateMenu() {
-  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
-  const [isAddConceptOpen, setIsAddConceptOpen] = useState(false);
-  const [isImportProjectOpen, setIsImportProjectOpen] = useState(false);
+export function UnifiedCreateMenu({ projectId }: { projectId?: number }) {
+  const [isCreationWizardOpen, setIsCreationWizardOpen] = useState(false);
+  const [creationType, setCreationType] = useState<"concept" | "project" | "feature" | "import">("concept");
+  
+  const handleOpenCreation = (type: "concept" | "project" | "feature" | "import") => {
+    setCreationType(type);
+    setIsCreationWizardOpen(true);
+  };
   
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create New
+            <Plus className="mr-2 h-4 w-4" />
+            Add
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Create New</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => setIsAddConceptOpen(true)}>
-            <Lightbulb className="mr-2 h-4 w-4" />
+          <DropdownMenuItem onClick={() => handleOpenCreation("concept")}>
+            <Lightbulb className="mr-2 h-4 w-4 text-amber-500" />
             <span>New Concept</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setIsAddProjectOpen(true)}>
-            <FolderKanban className="mr-2 h-4 w-4" />
+          <DropdownMenuItem onClick={() => handleOpenCreation("project")}>
+            <FolderKanban className="mr-2 h-4 w-4 text-blue-500" />
             <span>New Project</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleOpenCreation("feature")}>
+            <Puzzle className="mr-2 h-4 w-4 text-green-500" />
+            <span>New Feature</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Import</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => setIsImportProjectOpen(true)}>
-            <FileUp className="mr-2 h-4 w-4" />
-            <span>Import Project</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem disabled>
-            <FileCode className="mr-2 h-4 w-4" />
-            <span>Import Features</span>
+          <DropdownMenuItem onClick={() => handleOpenCreation("import")}>
+            <FileUp className="mr-2 h-4 w-4 text-purple-500" />
+            <span>Import</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Dialogs */}
-      <SimpleProjectWizard
-        open={isAddProjectOpen || isAddConceptOpen}
-        onOpenChange={(open) => {
-          if (isAddProjectOpen) setIsAddProjectOpen(open);
-          if (isAddConceptOpen) setIsAddConceptOpen(open);
-        }}
-        type={isAddConceptOpen ? "concept" : "project"}
-      />
-      
-      <ImportProjectDialog
-        open={isImportProjectOpen}
-        onOpenChange={setIsImportProjectOpen}
+      <UnifiedCreationWizard
+        open={isCreationWizardOpen}
+        onOpenChange={setIsCreationWizardOpen}
+        initialType={creationType}
+        projectId={projectId}
       />
     </>
   );
