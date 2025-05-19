@@ -63,3 +63,37 @@ export function useProject(id: number) {
     queryFn: fetchProject,
   });
 }
+
+// Project features fetching hook
+export function useProjectFeatures(projectId: number) {
+  const fetchFeatures = async () => {
+    const response = await fetch(`/api/projects/${projectId}/features`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch project features");
+    }
+    return response.json();
+  };
+
+  return useQuery({
+    queryKey: ["/api/projects", projectId, "features"],
+    queryFn: fetchFeatures,
+    enabled: !!projectId,
+  });
+}
+
+// AI suggestions fetching hook
+export function useProjectSuggestions(projectId: number) {
+  const fetchSuggestions = async () => {
+    const response = await fetch(`/api/projects/${projectId}/ai/suggestions`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch AI suggestions");
+    }
+    return response.json();
+  };
+
+  return useQuery({
+    queryKey: ["/api/projects", projectId, "suggestions"],
+    queryFn: fetchSuggestions,
+    enabled: !!projectId,
+  });
+}

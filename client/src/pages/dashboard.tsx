@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SimpleCreateProject } from "@/components/simple-create-project";
-import { ImportProjectDialog } from "@/components/import-project-dialog";
 import { PlusCircle, FolderOpen, Folder, Clock, ArrowRight, FileUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -17,6 +16,7 @@ export default function Dashboard() {
   const [_, navigate] = useLocation();
   const { data: projects, isLoading, isError } = useProjects();
   const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
+  // Import functionality to be added later
   const [isImportProjectOpen, setIsImportProjectOpen] = useState(false);
   const { toast } = useToast();
 
@@ -198,10 +198,7 @@ export default function Dashboard() {
         onOpenChange={setIsAddProjectOpen}
       />
       
-      <ImportProjectDialog
-        open={isImportProjectOpen}
-        onOpenChange={setIsImportProjectOpen}
-      />
+      {/* Import dialog will be added later */}
     </div>
   );
 }

@@ -55,6 +55,25 @@ export async function updateProject(id: number, projectData: any) {
 }
 
 // Feature API functions
+export async function createFeature(projectId: number, featureData: any) {
+  const response = await fetch(`/api/projects/${projectId}/features`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(featureData),
+  });
+  
+  if (!response.ok) {
+    throw new Error("Failed to create feature");
+  }
+  
+  // Invalidate features cache for this project
+  queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "features"] });
+  
+  return response.json();
+}
+
 export async function deleteFeature(id: number) {
   const response = await fetch(`/api/features/${id}`, {
     method: "DELETE",
@@ -109,6 +128,22 @@ export async function updateFeatureCategory(id: number, category: string) {
 }
 
 // AI API functions
+export async function analyzeFeature(featureId: number, description: string) {
+  const response = await fetch(`/api/ai/analyze-feature`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ featureId, description }),
+  });
+  
+  if (!response.ok) {
+    throw new Error("Failed to analyze feature");
+  }
+  
+  return response.json();
+}
+
 export async function enhanceFeatureDescription(featureId: number, description: string) {
   const response = await fetch(`/api/ai/enhance-description`, {
     method: "POST",
@@ -136,6 +171,22 @@ export async function generateTags(text: string) {
   
   if (!response.ok) {
     throw new Error("Failed to generate tags");
+  }
+  
+  return response.json();
+}
+
+export async function generateFeaturesFromProjectInfo(projectId: number, projectInfo: any) {
+  const response = await fetch(`/api/projects/${projectId}/ai/suggest-features-from-info`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(projectInfo),
+  });
+  
+  if (!response.ok) {
+    throw new Error("Failed to generate features from project info");
   }
   
   return response.json();
