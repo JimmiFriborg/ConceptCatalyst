@@ -309,7 +309,7 @@ export function MultiPerspectiveAnalysis({
                           analysis.effort === 'low' ? 'bg-green-100 text-green-800' :
                           analysis.effort === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
-                        }`}
+                        }`}>
                           {analysis.effort.charAt(0).toUpperCase() + analysis.effort.slice(1)} Effort
                         </div>
                       </div>

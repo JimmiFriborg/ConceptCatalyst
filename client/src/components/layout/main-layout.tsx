@@ -7,7 +7,8 @@ import {
   FolderKanban, 
   Settings,
   PlusCircle,
-  Database
+  Database,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SimpleProjectWizard } from "@/components/simple-project-wizard";
@@ -26,6 +27,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     { name: "Concepts", href: "/concepts", icon: Lightbulb },
     { name: "Projects", href: "/projects", icon: FolderKanban },
     { name: "Feature Bank", href: "/feature-bank", icon: Database },
+    { name: "AI Tools", href: "/ai-tools", icon: Sparkles },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 

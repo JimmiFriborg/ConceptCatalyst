@@ -9,6 +9,7 @@ import ProjectView from "@/pages/project-view";
 import ProjectViewTabs from "@/pages/project-view-tabs";
 import FeatureBank from "@/pages/feature-bank";
 import CreationPage from "@/pages/creation-page";
+import AITools from "@/pages/ai-tools";
 import { ProjectProvider } from "@/context/project-context";
 import { MainLayout } from "@/components/layout/main-layout";
 
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/concepts" component={Dashboard} />
       <Route path="/projects" component={Dashboard} />
       <Route path="/feature-bank" component={FeatureBank} />
+      <Route path="/ai-tools" component={AITools} />
       <Route path="/settings" component={NotFound} />
       <Route path="/new" component={CreationPage} />
       <Route path="/new/:type" component={CreationPage} />
