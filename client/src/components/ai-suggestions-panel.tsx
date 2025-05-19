@@ -82,7 +82,7 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
   const [isGenerating, setIsGenerating] = useState(false);
   const { currentProjectId, aiSuggestions } = useProject();
   // Use projectSuggestions hook to make sure we get fresh data
-  const { data: freshSuggestions = [] } = useProjectSuggestions(currentProjectId);
+  const { data: freshSuggestions } = useProjectSuggestions(currentProjectId);
   const { toast } = useToast();
 
   // Define "all" as a string type for perspective filtering
@@ -128,7 +128,17 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
 
   // Add suggestion as a feature
   const handleAddSuggestion = async (suggestion: AiSuggestion) => {
+    if (!currentProjectId) {
+      toast({
+        title: "Error",
+        description: "No active project selected",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
+      console.log(`Accepting suggestion ${suggestion.id} for project ${currentProjectId}`);
       await acceptSuggestion(suggestion.id);
       
       // Refresh data
@@ -144,6 +154,7 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
         description: `"${suggestion.name}" has been added as a feature.`,
       });
     } catch (error) {
+      console.error("Error accepting suggestion:", error);
       toast({
         title: "Error",
         description: "Failed to add suggestion.",
@@ -154,7 +165,17 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
 
   // Ignore suggestion
   const handleIgnoreSuggestion = async (suggestion: AiSuggestion) => {
+    if (!currentProjectId) {
+      toast({
+        title: "Error",
+        description: "No active project selected",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
+      console.log(`Deleting suggestion ${suggestion.id} for project ${currentProjectId}`);
       await deleteSuggestion(suggestion.id);
       
       // Refresh suggestions data
@@ -167,6 +188,7 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
         description: `"${suggestion.name}" has been removed from suggestions.`,
       });
     } catch (error) {
+      console.error("Error ignoring suggestion:", error);
       toast({
         title: "Error",
         description: "Failed to ignore suggestion.",
@@ -235,17 +257,17 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
             </div>
           ) : (
             <>
-              {filteredSuggestions.map((suggestion) => (
+              {filteredSuggestions.map((suggestion: AiSuggestion) => (
                 <Card key={suggestion.id} className="mb-6">
                   <CardHeader className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         Suggested Feature
                       </h4>
-                      <Badge className={perspectiveBadgeClasses[suggestion.perspective as Perspective]}>
-                        {perspectiveIcons[suggestion.perspective as Perspective]}
+                      <Badge className={perspectiveBadgeClasses[suggestion.perspective]}>
+                        {perspectiveIcons[suggestion.perspective]}
                         <span className="ml-1">
-                          {perspectiveNames[suggestion.perspective as Perspective]}
+                          {perspectiveNames[suggestion.perspective]}
                         </span>
                       </Badge>
                     </div>
@@ -260,8 +282,8 @@ export function AiSuggestionsPanel({ isLoading = false }: AiSuggestionsPanelProp
                     </p>
                     
                     <div className="mt-3 flex justify-between items-center">
-                      <Badge className={categoryBadgeClasses[suggestion.suggestedCategory as Category]}>
-                        Suggested: {categoryNames[suggestion.suggestedCategory as Category]}
+                      <Badge className={categoryBadgeClasses[suggestion.suggestedCategory]}>
+                        Suggested: {categoryNames[suggestion.suggestedCategory]}
                       </Badge>
                       <div className="flex space-x-2">
                         <Button 
