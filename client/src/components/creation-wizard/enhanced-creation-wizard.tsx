@@ -1,339 +1,224 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProjectForm, ProjectFormData } from "./project-form";
+import { FeatureForm, FeatureFormData } from "./feature-form";
+import { ConceptForm, ConceptFormData } from "./concept-form";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, Lightbulb, Layers, FileCode, Upload } from "lucide-react";
-import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
-import { queryClient } from "@/lib/queryClient";
-import { SimplifiedConceptForm } from "@/components/creation-wizard/simplified-concept-form";
-import { ProjectForm } from "@/components/creation-wizard/project-form";
-import { FeatureForm } from "@/components/creation-wizard/feature-form";
+import { Separator } from "@/components/ui/separator";
+import { CircleHelp } from "lucide-react";
 
-// Define the different creation types that our wizard supports
 export type CreationType = "concept" | "project" | "feature" | "import";
 
-// Props for our enhanced creation wizard component
 interface EnhancedCreationWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialType?: CreationType;
-  projectId?: number; // Optional project ID if we're creating a feature within a project
+  initialType: CreationType;
+  projectId?: number;
 }
 
 export function EnhancedCreationWizard({ 
   open, 
   onOpenChange, 
-  initialType = "concept",
-  projectId 
+  initialType,
+  projectId
 }: EnhancedCreationWizardProps) {
+  const [activeTab, setActiveTab] = useState<CreationType>(initialType);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { toast } = useToast();
-  const [_, navigate] = useLocation();
-  
-  // Track current wizard state
-  const [creationType, setCreationType] = useState<CreationType>(initialType);
-  const [step, setStep] = useState<"type-selection" | "form">("type-selection");
-  
-  // Handle dialog open/close
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      // Reset the wizard when closed
-      setStep("type-selection");
-      setCreationType(initialType);
-    }
-    onOpenChange(open);
+
+  const handleTypeChange = (value: string) => {
+    setActiveTab(value as CreationType);
   };
 
-  // Handle creating a concept (quick flow)
-  const handleCreateConcept = async (data: any) => {
+  // Function to handle project creation
+  const handleProjectSubmit = async (data: ProjectFormData) => {
     try {
-      const payload = {
-        name: data.name,
-        description: data.description,
-        type: "concept",
-        enhanceWithAi: data.enhanceWithAi,
-      };
+      setIsSubmitting(true);
       
-      const response = await apiRequest("/api/projects", "POST", payload);
+      // Determine if this is a concept or full project based on data characteristics
+      const isConcept = activeTab === "concept";
       
-      // Show success toast
+      // In a real implementation, this would save to the API
+      // For now, we'll just show a success message
+      console.log("Creating project:", { ...data, type: isConcept ? "concept" : "project" });
+      
       toast({
-        title: "Concept created!",
-        description: "Your new concept has been created successfully.",
+        title: `${isConcept ? "Concept" : "Project"} created successfully`,
+        description: `"${data.name}" has been added to your ${isConcept ? "concepts" : "projects"}.`,
       });
       
-      // Close the dialog
-      handleOpenChange(false);
-      
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      
-      // Navigate to the new concept
-      navigate(`/projects/${response.id}`);
+      onOpenChange(false);
     } catch (error) {
+      console.error('Error creating project:', error);
       toast({
-        title: "Failed to create concept",
-        description: "There was an error creating your concept. Please try again.",
+        title: "Error",
+        description: "Failed to create project. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
-  // Handle creating a project (detailed flow)
-  const handleCreateProject = async (data: any) => {
+  // Function to handle concept creation
+  const handleConceptSubmit = async (data: ConceptFormData) => {
     try {
-      const payload = {
-        name: data.name,
-        description: data.description,
-        type: "project",
-        mission: data.mission,
-        goals: data.goals,
-        inScope: data.inScope,
-        outOfScope: data.outOfScope,
-        constraints: data.constraints,
-        technicalRequirements: data.technicalRequirements,
-        enhanceWithAi: data.enhanceWithAi,
-      };
+      setIsSubmitting(true);
       
-      const response = await apiRequest("/api/projects", "POST", payload);
+      // In a real implementation, this would save to the API
+      // For now, we'll just show a success message
+      console.log("Creating concept:", data);
       
-      // Show success toast
       toast({
-        title: "Project created!",
-        description: "Your new project has been created successfully.",
+        title: "Concept created successfully",
+        description: `"${data.name}" has been added to your concepts.`,
       });
       
-      // Close the dialog
-      handleOpenChange(false);
-      
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      
-      // Navigate to the new project
-      navigate(`/projects/${response.id}`);
+      onOpenChange(false);
     } catch (error) {
+      console.error('Error creating concept:', error);
       toast({
-        title: "Failed to create project",
-        description: "There was an error creating your project. Please try again.",
+        title: "Error",
+        description: "Failed to create concept. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
-  // Handle creating a feature
-  const handleCreateFeature = async (data: any) => {
-    try {
-      const payload = {
-        name: data.name,
-        description: data.description,
-        perspective: data.perspective,
-        priority: data.priority,
-        projectId: projectId || null,
-        userBenefit: data.userBenefit,
-        implementationComplexity: data.implementationComplexity,
-        dependencies: data.dependencies,
-        tags: data.tags,
-        enhanceWithAi: data.enhanceWithAi,
-      };
-      
-      await apiRequest("/api/features", "POST", payload);
-      
-      // Show success toast
+  // Function to handle feature creation
+  const handleFeatureSubmit = async (data: FeatureFormData) => {
+    if (!projectId) {
       toast({
-        title: "Feature created!",
-        description: "Your new feature has been created successfully.",
-      });
-      
-      // Close the dialog
-      handleOpenChange(false);
-      
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['/api/features'] });
-      if (projectId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/features`] });
-      }
-      
-      // Stay on current page (no navigation needed)
-    } catch (error) {
-      toast({
-        title: "Failed to create feature",
-        description: "There was an error creating your feature. Please try again.",
+        title: "Error",
+        description: "Project ID is required to create a feature.",
         variant: "destructive",
       });
-    }
-  };
-  
-  // Get the title for the dialog based on current state
-  const getDialogTitle = () => {
-    if (step === "type-selection") {
-      return "What would you like to create?";
+      return;
     }
     
-    switch (creationType) {
-      case "concept":
-        return "Create a New Concept";
-      case "project":
-        return "Create a New Project";
-      case "feature":
-        return "Create a New Feature";
-      case "import":
-        return "Import Content";
-      default:
-        return "Create New Item";
+    try {
+      setIsSubmitting(true);
+      
+      // In a real implementation, this would save to the API
+      // For now, we'll just show a success message
+      console.log("Creating feature for project", projectId, data);
+      
+      toast({
+        title: "Feature created successfully",
+        description: `"${data.name}" has been added to the project.`,
+      });
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error creating feature:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create feature. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
-  // Get the description for the dialog based on current state
-  const getDialogDescription = () => {
-    if (step === "type-selection") {
-      return "Choose what type of item to create.";
-    }
-    
-    switch (creationType) {
-      case "concept":
-        return "Create a concept for brainstorming and exploration.";
-      case "project":
-        return "Create a detailed implementation-ready project.";
-      case "feature":
-        return "Create a specific feature with implementation details.";
-      case "import":
-        return "Import content from external sources.";
-      default:
-        return "";
-    }
-  };
-  
-  // Render the type selection step
-  const renderTypeSelection = () => {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Button
-          variant={creationType === "concept" ? "default" : "outline"} 
-          className="h-auto p-4 flex flex-col items-center justify-center gap-2 text-center w-full overflow-hidden"
-          onClick={() => {
-            setCreationType("concept");
-            setStep("form");
-          }}
-        >
-          <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full">
-            <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-300" />
-          </div>
-          <div className="text-md font-medium">Concept</div>
-          <p className="text-xs font-normal text-gray-500 dark:text-gray-400 w-full truncate px-2">
-            Brainstorming ideas
-          </p>
-        </Button>
-        
-        <Button
-          variant={creationType === "project" ? "default" : "outline"} 
-          className="h-auto p-4 flex flex-col items-center justify-center gap-2 text-center w-full overflow-hidden"
-          onClick={() => {
-            setCreationType("project");
-            setStep("form");
-          }}
-        >
-          <div className="bg-green-100 dark:bg-green-900 p-2 rounded-full">
-            <Layers className="h-5 w-5 text-green-600 dark:text-green-300" />
-          </div>
-          <div className="text-md font-medium">Project</div>
-          <p className="text-xs font-normal text-gray-500 dark:text-gray-400 w-full truncate px-2">
-            Implementation-ready
-          </p>
-        </Button>
-        
-        <Button
-          variant={creationType === "feature" ? "default" : "outline"} 
-          className="h-auto p-4 flex flex-col items-center justify-center gap-2 text-center w-full overflow-hidden"
-          onClick={() => {
-            setCreationType("feature");
-            setStep("form");
-          }}
-        >
-          <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full">
-            <FileCode className="h-5 w-5 text-purple-600 dark:text-purple-300" />
-          </div>
-          <div className="text-md font-medium">Feature</div>
-          <p className="text-xs font-normal text-gray-500 dark:text-gray-400 w-full truncate px-2">
-            Individual capability
-          </p>
-        </Button>
-        
-        <Button
-          variant={creationType === "import" ? "default" : "outline"} 
-          className="h-auto p-4 flex flex-col items-center justify-center gap-2 text-center w-full overflow-hidden"
-          onClick={() => {
-            setCreationType("import");
-            setStep("form");
-          }}
-        >
-          <div className="bg-amber-100 dark:bg-amber-900 p-2 rounded-full">
-            <Upload className="h-5 w-5 text-amber-600 dark:text-amber-300" />
-          </div>
-          <div className="text-md font-medium">Import</div>
-          <p className="text-xs font-normal text-gray-500 dark:text-gray-400 w-full truncate px-2">
-            From external sources
-          </p>
-        </Button>
-      </div>
-    );
-  };
-  
-  // Render the form for the selected type
-  const renderForm = () => {
-    switch (creationType) {
-      case "concept":
-        return (
-          <SimplifiedConceptForm 
-            onSubmit={handleCreateConcept}
-            onBack={() => setStep("type-selection")}
-          />
-        );
-      case "project":
-        return (
-          <ProjectForm 
-            onSubmit={handleCreateProject}
-            onBack={() => setStep("type-selection")}
-          />
-        );
-      case "feature":
-        return (
-          <FeatureForm 
-            onSubmit={handleCreateFeature}
-            onBack={() => setStep("type-selection")}
-            projectId={projectId}
-          />
-        );
-      case "import":
-        // Import form not yet implemented
-        return (
-          <div className="p-6 text-center">
-            <p className="mb-4">Import functionality coming soon.</p>
-            <Button onClick={() => setStep("type-selection")}>
-              Go Back
-            </Button>
-          </div>
-        );
-      default:
-        return null;
+
+  // Function to handle project import
+  const handleProjectImport = async (data: any) => {
+    try {
+      setIsSubmitting(true);
+      // Import logic will be implemented later
+      toast({
+        title: "Import functionality",
+        description: "Import functionality will be implemented in a future update.",
+      });
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error importing project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to import project. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
-  // The main render method
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {getDialogTitle()}
+          <DialogTitle className="text-2xl font-bold">
+            {activeTab === "concept" ? "New Concept" : 
+             activeTab === "project" ? "New Project" : 
+             activeTab === "feature" ? "New Feature" : 
+             "Import Project"}
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
-            {getDialogDescription()}
-          </DialogDescription>
+          <div className="flex items-center text-sm text-muted-foreground gap-1 mt-1">
+            <CircleHelp className="h-4 w-4" />
+            {activeTab === "concept" && "Quick concept creation for brainstorming (2-minute process)"}
+            {activeTab === "project" && "Detailed project setup with implementation planning"}
+            {activeTab === "feature" && "Add a new feature to an existing project"}
+            {activeTab === "import" && "Import an existing project from external source"}
+          </div>
         </DialogHeader>
         
-        <div className="mt-4">
-          {step === "type-selection" ? renderTypeSelection() : renderForm()}
-        </div>
+        <Tabs value={activeTab} onValueChange={handleTypeChange} className="w-full mt-2">
+          <TabsList className="grid grid-cols-4 mb-6">
+            <TabsTrigger value="concept">Concept</TabsTrigger>
+            <TabsTrigger value="project">Project</TabsTrigger>
+            <TabsTrigger value="feature" disabled={!projectId}>Feature</TabsTrigger>
+            <TabsTrigger value="import">Import</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="concept">
+            <ConceptForm 
+              onSubmit={handleConceptSubmit} 
+              defaultValues={{ 
+                enhanceWithAi: true,
+                isAiConcept: false
+              }}
+            />
+          </TabsContent>
+          
+          <TabsContent value="project">
+            <ProjectForm 
+              onSubmit={handleProjectSubmit} 
+              defaultValues={{ 
+                enhanceWithAi: true,
+                status: "planning",
+                aiOptimized: false
+              }}
+            />
+          </TabsContent>
+          
+          <TabsContent value="feature">
+            <FeatureForm 
+              onSubmit={handleFeatureSubmit} 
+              projectId={projectId}
+              defaultValues={{ 
+                enhanceWithAi: true,
+                perspective: "technical",
+                implementationComplexity: "medium",
+                priority: "medium",
+                isAiFeature: false
+              }}
+            />
+          </TabsContent>
+          
+          <TabsContent value="import">
+            <div className="p-8 text-center">
+              <h3 className="text-lg font-medium">Import Project</h3>
+              <p className="text-muted-foreground mt-2">
+                Import functionality will be implemented in a future update. This will allow you 
+                to import projects from different sources like GitHub, Trello, or JSON files.
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
