@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import ProjectView from "@/pages/project-view";
 import ProjectViewTabs from "@/pages/project-view-tabs";
+import ConceptView from "@/pages/concept-view";
 import FeatureBank from "@/pages/feature-bank";
 import CreationPage from "@/pages/creation-page";
 import AITools from "@/pages/ai-tools";
@@ -21,7 +22,7 @@ function Router() {
         {params => <ProjectViewTabs id={parseInt(params.id)} />}
       </Route>
       <Route path="/concepts/:id">
-        {params => <ProjectViewTabs id={parseInt(params.id)} />}
+        {params => <ConceptView />}
       </Route>
       <Route path="/concepts" component={Dashboard} />
       <Route path="/projects" component={Dashboard} />
