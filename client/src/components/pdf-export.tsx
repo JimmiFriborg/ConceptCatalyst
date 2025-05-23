@@ -88,7 +88,7 @@ export function PdfExport({ project, features }: PdfExportProps) {
       }
 
       // Inspirations (for concepts)
-      if (exportOptions.includeInspirations && project.inspirations && project.inspirations.length > 0) {
+      if (exportOptions.includeInspirations && (project as any).inspirations && (project as any).inspirations.length > 0) {
         pdf.setFontSize(14);
         pdf.setFont("helvetica", "bold");
         pdf.text("Inspirations", margin, yPosition);
