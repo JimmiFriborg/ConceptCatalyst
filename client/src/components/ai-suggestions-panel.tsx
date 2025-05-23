@@ -7,7 +7,12 @@ import {
   CodeIcon,
   LineChartIcon,
   SmileIcon,
-  ShieldAlertIcon
+  ShieldAlertIcon,
+  Zap,
+  Puzzle,
+  Book,
+  DollarSign,
+  Megaphone
 } from "lucide-react";
 import { 
   Select,
@@ -68,11 +73,11 @@ const perspectiveIcons: Record<Perspective, React.ReactNode> = {
   business: <LineChartIcon className="h-4 w-4" />,
   ux: <SmileIcon className="h-4 w-4" />,
   security: <ShieldAlertIcon className="h-4 w-4" />,
-  gameplay: <ZapIcon className="h-4 w-4" />,
-  gameDesign: <PuzzleIcon className="h-4 w-4" />,
-  narrative: <BookIcon className="h-4 w-4" />,
-  monetization: <DollarSignIcon className="h-4 w-4" />,
-  marketing: <MegaphoneIcon className="h-4 w-4" />
+  gameplay: <Zap className="h-4 w-4" />,
+  gameDesign: <Puzzle className="h-4 w-4" />,
+  narrative: <Book className="h-4 w-4" />,
+  monetization: <DollarSign className="h-4 w-4" />,
+  marketing: <Megaphone className="h-4 w-4" />
 };
 
 // Map categories to badge classes
