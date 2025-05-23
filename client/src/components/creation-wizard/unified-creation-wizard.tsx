@@ -449,15 +449,15 @@ export function UnifiedCreationWizard({
           className="h-auto p-4 flex flex-col items-center justify-center gap-2 text-center w-full overflow-hidden"
           onClick={() => {
             setCreationType("concept");
-            projectForm.setValue("type", "concept");
+            conceptForm.setValue("type", "concept");
           }}
         >
           <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full">
             <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-300" />
           </div>
-          <div className="text-md font-medium">Concept</div>
+          <div className="text-md font-medium">Game Concept</div>
           <p className="text-xs font-normal text-gray-500 dark:text-gray-400 w-full truncate px-2">
-            Brainstorming ideas
+            Quick game idea exploration
           </p>
         </Button>
         

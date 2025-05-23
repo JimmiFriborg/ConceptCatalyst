@@ -78,8 +78,20 @@ const categoryNames: Record<Category, string> = {
   "rejected": "Rejected"
 };
 
+// Feature suggestion categories for game development
+const featureSuggestionCategories = {
+  "game-features": "Game Features",
+  "technical": "Technical Implementation", 
+  "design": "Game Design",
+  "story": "Story & Narrative",
+  "ui-ux": "UI/UX Design",
+  "monetization": "Monetization",
+  "marketing": "Marketing & Community"
+};
+
 export function AiSuggestionsPanel({ isLoading = false, onFeatureAdded }: AiSuggestionsPanelProps) {
   const [perspective, setPerspective] = useState<Perspective | "all">("technical");
+  const [selectedCategory, setSelectedCategory] = useState<string>("game-features");
   const [isGenerating, setIsGenerating] = useState(false);
   const { currentProjectId, aiSuggestions } = useProject();
   // Use projectSuggestions hook to make sure we get fresh data

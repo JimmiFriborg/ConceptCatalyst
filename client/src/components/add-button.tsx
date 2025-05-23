@@ -10,7 +10,7 @@ export function AddButton({ projectId }: { projectId?: number }) {
     <>
       <Button onClick={() => setIsWizardOpen(true)}>
         <Plus className="mr-2 h-4 w-4" />
-        Add
+        Create New
       </Button>
       
       <UnifiedCreationWizard
