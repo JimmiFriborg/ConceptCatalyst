@@ -258,8 +258,8 @@ export async function generateFeaturesFromProjectInfo(
       For each feature, provide:
       1. A clear and concise name
       2. A detailed description explaining its purpose and value
-      3. A technical perspective (technical, business, ux, or security)
-      4. A suggested category (mvp, launch, v1.5, v2.0)
+      3. A perspective (technical, business, ux, security, gameplay, gameDesign, narrative, monetization, marketing)
+      4. A suggested priority (mvp, launch, v1.5, v2.0)
       
       Generate a diverse set of features that cover different aspects of the project.
       Include both essential features and innovative ideas.

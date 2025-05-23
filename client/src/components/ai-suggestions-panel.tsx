@@ -41,7 +41,12 @@ const perspectiveNames: Record<Perspective, string> = {
   technical: "Technical",
   business: "Business",
   ux: "UX/UI",
-  security: "Security"
+  security: "Security",
+  gameplay: "Gameplay",
+  gameDesign: "Game Design",
+  narrative: "Story & Narrative",
+  monetization: "Monetization",
+  marketing: "Marketing"
 };
 
 // Map perspectives to badge classes
@@ -49,7 +54,12 @@ const perspectiveBadgeClasses: Record<Perspective, string> = {
   technical: "perspective-badge-technical",
   business: "perspective-badge-business",
   ux: "perspective-badge-ux",
-  security: "perspective-badge-security"
+  security: "perspective-badge-security",
+  gameplay: "perspective-badge-gameplay",
+  gameDesign: "perspective-badge-gameDesign",
+  narrative: "perspective-badge-narrative",
+  monetization: "perspective-badge-monetization",
+  marketing: "perspective-badge-marketing"
 };
 
 // Map perspectives to icons
@@ -57,7 +67,12 @@ const perspectiveIcons: Record<Perspective, React.ReactNode> = {
   technical: <CodeIcon className="h-4 w-4" />,
   business: <LineChartIcon className="h-4 w-4" />,
   ux: <SmileIcon className="h-4 w-4" />,
-  security: <ShieldAlertIcon className="h-4 w-4" />
+  security: <ShieldAlertIcon className="h-4 w-4" />,
+  gameplay: <ZapIcon className="h-4 w-4" />,
+  gameDesign: <PuzzleIcon className="h-4 w-4" />,
+  narrative: <BookIcon className="h-4 w-4" />,
+  monetization: <DollarSignIcon className="h-4 w-4" />,
+  marketing: <MegaphoneIcon className="h-4 w-4" />
 };
 
 // Map categories to badge classes

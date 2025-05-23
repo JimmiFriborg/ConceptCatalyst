@@ -22,6 +22,11 @@ export const perspectiveEnum = z.enum([
   "business",
   "ux",
   "security",
+  "gameplay",
+  "gameDesign",
+  "narrative",
+  "monetization",
+  "marketing"
 ]);
 
 export type Perspective = z.infer<typeof perspectiveEnum>;
