@@ -12,6 +12,7 @@ import { DriftDetectionAlert } from "@/components/drift-detection-alert";
 import { ProjectEvaluation } from "@/components/project-evaluation";
 import { PriorityVisualization } from "@/components/priority-visualization";
 import { AiFeatureSuggestionDialog } from "@/components/ai-feature-suggestion-dialog";
+import { PdfExport } from "@/components/pdf-export";
 // Removed Frankenstein Feature dialog to improve stability
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -199,14 +200,12 @@ export default function ProjectView({ id }: ProjectViewProps) {
               <BarChart2 className="mr-1 h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">{showVisualization ? "Hide Chart" : "Show Chart"}</span>
             </Button>
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-            >
-              <Download className="mr-1 h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
+            {project && (
+              <PdfExport 
+                project={project} 
+                features={features || []} 
+              />
+            )}
             <Button 
               variant="outline"
               size="sm"
